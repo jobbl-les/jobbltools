@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IMEI Validator — jobbltools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --good: #16a34a;
+    --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --good: #4ade80;
+      --bad: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  main {
+    width: 100%;
+    max-width: 480px;
+  }
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin: 0.75rem 0 0.4rem;
+  }
+  p.sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  input {
+    width: 100%;
+    padding: 0.7rem 0.8rem;
+    font-size: 1.15rem;
+    letter-spacing: 0.03em;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--fg);
+  }
+  .hint {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+    min-height: 1.1em;
+  }
+  .result {
+    margin-top: 1.1rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--border);
+    display: none;
+  }
+  .result.show { display: block; }
+  .status {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .status.ok { color: var(--good); }
+  .status.err { color: var(--bad); }
+  .imei-out {
+    font-size: 1.3rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.03em;
+    word-break: break-all;
+  }
+  .imei-out .check {
+    color: var(--accent);
+  }
+  .row-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.6rem;
+  }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; jobbltools</a>
+  <h1>IMEI Validator &amp; Check Digit Generator</h1>
+  <p class="sub">Enter a 14-digit IMEI to generate its check digit, or a 15-digit IMEI to verify it.</p>
+
+  <div class="card">
+    <label for="imei">IMEI</label>
+    <input id="imei" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 49015420323751" maxlength="17">
+    <div class="hint" id="hint"></div>
+
+    <div class="result" id="result">
+      <div class="status" id="status"></div>
+      <div class="row-label" id="rowLabel"></div>
+      <div class="imei-out" id="imeiOut"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+  function luhnCheckDigit(payload14) {
+    const digits = payload14.split("").reverse().map(Number);
+    let sum = 0;
+    for (let i = 0; i < digits.length; i++) {
+      let d = digits[i];
+      if (i % 2 === 0) {
+        d *= 2;
+        if (d > 9) d -= 9;
+      }
+      sum += d;
+    }
+    return (10 - (sum % 10)) % 10;
+  }
+
+  const input = document.getElementById("imei");
+  const hint = document.getElementById("hint");
+  const result = document.getElementById("result");
+  const status = document.getElementById("status");
+  const rowLabel = document.getElementById("rowLabel");
+  const imeiOut = document.getElementById("imeiOut");
+
+  function render() {
+    const digits = input.value.replace(/\D/g, "").slice(0, 15);
+    if (input.value !== digits) {
+      const pos = input.selectionStart;
+      input.value = digits;
+      input.setSelectionRange(pos, pos);
+    }
+
+    if (digits.length === 0) {
+      hint.textContent = "";
+      result.classList.remove("show");
+      return;
+    }
+
+    if (digits.length < 14) {
+      hint.textContent = `${digits.length}/14 digits — enter 14 digits to generate a check digit, or 15 to validate.`;
+      result.classList.remove("show");
+      return;
+    }
+
+    if (digits.length === 14) {
+      hint.textContent = "";
+      const check = luhnCheckDigit(digits);
+      status.textContent = "Check digit generated";
+      status.className = "status ok";
+      rowLabel.textContent = "Full 15-digit IMEI";
+      imeiOut.innerHTML = digits + `<span class="check">${check}</span>`;
+      result.classList.add("show");
+      return;
+    }
+
+    if (digits.length === 15) {
+      hint.textContent = "";
+      const payload = digits.slice(0, 14);
+      const given = Number(digits[14]);
+      const expected = luhnCheckDigit(payload);
+      if (given === expected) {
+        status.textContent = "Valid IMEI — check digit is correct";
+        status.className = "status ok";
+        rowLabel.textContent = "";
+        imeiOut.innerHTML = payload + `<span class="check">${given}</span>`;
+      } else {
+        status.textContent = `Invalid check digit (found ${given}, expected ${expected})`;
+        status.className = "status err";
+        rowLabel.textContent = "Corrected IMEI";
+        imeiOut.innerHTML = payload + `<span class="check">${expected}</span>`;
+      }
+      result.classList.add("show");
+      return;
+    }
+
+    hint.textContent = `${digits.length} digits — IMEI must be 14 or 15 digits.`;
+    result.classList.remove("show");
+  }
+
+  input.addEventListener("input", render);
+</script>
+</body>
+</html>
