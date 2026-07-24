@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Percentage Calculator — jobbltools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  main {
+    width: 100%;
+    max-width: 480px;
+  }
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin: 0.75rem 0 1.25rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  input {
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--fg);
+    margin-bottom: 1rem;
+  }
+  .result {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .result span {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--muted);
+    display: block;
+  }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; jobbltools</a>
+  <h1>Percentage Calculator</h1>
+
+  <div class="card">
+    <label for="part">What is X% of Y?</label>
+    <input id="pctA" type="number" placeholder="X (percent)">
+    <input id="pctB" type="number" placeholder="Y (total)">
+    <div class="result" id="pctResult">—</div>
+  </div>
+
+  <div class="card">
+    <label>X is what % of Y?</label>
+    <input id="ofA" type="number" placeholder="X">
+    <input id="ofB" type="number" placeholder="Y">
+    <div class="result" id="ofResult">—</div>
+  </div>
+</main>
+
+<script>
+  function fmt(n) {
+    return Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: 4 }) : "—";
+  }
+
+  const pctA = document.getElementById("pctA");
+  const pctB = document.getElementById("pctB");
+  const pctResult = document.getElementById("pctResult");
+  function updatePct() {
+    const a = parseFloat(pctA.value), b = parseFloat(pctB.value);
+    pctResult.textContent = fmt((a / 100) * b);
+  }
+  pctA.addEventListener("input", updatePct);
+  pctB.addEventListener("input", updatePct);
+
+  const ofA = document.getElementById("ofA");
+  const ofB = document.getElementById("ofB");
+  const ofResult = document.getElementById("ofResult");
+  function updateOf() {
+    const a = parseFloat(ofA.value), b = parseFloat(ofB.value);
+    ofResult.textContent = b ? fmt((a / b) * 100) + "%" : "—";
+  }
+  ofA.addEventListener("input", updateOf);
+  ofB.addEventListener("input", updateOf);
+</script>
+</body>
+</html>
