@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UK Take-Home Pay vs Salary — jobbltools</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --bg: #f9f9f7;
+    --surface: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --border: #ddd;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --card: #f5f5f7;
+    --accent: #2563eb;
+    --bad: #dc2626;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+  }
+  @media (prefers-color-scheme: dark) {
+    .viz-root {
+      color-scheme: dark;
+      --bg: #0d0d0d;
+      --surface: #1a1a19;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --border: #333;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --card: #1e1e1e;
+      --accent: #60a5fa;
+      --bad: #f87171;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main {
+    width: 100%;
+    max-width: 820px;
+  }
+  a.back {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin: 0.75rem 0 0.3rem;
+  }
+  p.sub {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    font-size: 1.1rem;
+    letter-spacing: 0.03em;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+  .code-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .code-row > div:first-child { flex: 1 1 220px; }
+  .ni-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding-bottom: 0.65rem;
+    white-space: nowrap;
+  }
+  .ni-toggle input { width: 16px; height: 16px; }
+  .chip {
+    margin-top: 0.6rem;
+    font-size: 0.82rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .chip.err { color: var(--bad); border-color: var(--bad); }
+  .chip b { color: var(--text-primary); }
+
+  .range-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+  .range-field input[type="number"] {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+
+  .chart-wrap {
+    position: relative;
+    margin-top: 0.5rem;
+  }
+  svg.chart {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .axis-title {
+    font-size: 12px;
+    fill: var(--text-secondary);
+  }
+  .tick-label {
+    font-size: 11px;
+    fill: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .axis-line { stroke: var(--axis); stroke-width: 1; }
+  .series-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .crosshair { stroke: var(--axis); stroke-width: 1; pointer-events: none; }
+  .end-dot { stroke: var(--surface); stroke-width: 2; }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.08s;
+    z-index: 5;
+  }
+  .tooltip.show { opacity: 1; }
+  .tooltip .t-salary {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.3rem;
+  }
+  .tooltip .t-row { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.15rem; }
+  .tooltip .key { width: 10px; height: 2px; display: inline-block; }
+  .tooltip .val { font-weight: 600; color: var(--text-primary); margin-left: auto; padding-left: 0.75rem; }
+
+  .caveats {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .table-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    margin-top: 0.75rem;
+  }
+  .table-wrap { margin-top: 0.75rem; overflow-x: auto; display: none; }
+  .table-wrap.show { display: block; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.82rem;
+  }
+  th, td {
+    text-align: right;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  th:first-child, td:first-child { text-align: left; }
+  th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: var(--card);
+  }
+  td { color: var(--text-primary); }
+</style>
+</head>
+<body>
+<div class="viz-root" style="width:100%; max-width:820px;">
+<main>
+  <a class="back" href="../../index.html">&larr; jobbltools</a>
+  <h1>UK Take-Home Pay vs Salary</h1>
+  <p class="sub">Enter a PAYE tax code to see take-home pay and effective deduction rate across a salary range. Tax year 2026/27.</p>
+
+  <div class="card">
+    <div class="code-row">
+      <div>
+        <label for="taxCode">Tax code</label>
+        <input id="taxCode" type="text" value="1257L" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="ni-toggle">
+        <input id="includeNi" type="checkbox" checked>
+        <label for="includeNi" style="margin:0;">Include employee NI (Class 1)</label>
+      </div>
+    </div>
+    <div class="chip" id="codeChip"></div>
+  </div>
+
+  <div class="card">
+    <div class="range-grid">
+      <div class="range-field">
+        <label for="minSalaryInput">Min salary (£)</label>
+        <input id="minSalaryInput" type="number" step="500" min="0" max="500000" value="10000">
+        <input id="minSalarySlider" type="range" min="0" max="500000" step="500" value="10000">
+      </div>
+      <div class="range-field">
+        <label for="maxSalaryInput">Max salary (£)</label>
+        <input id="maxSalaryInput" type="number" step="500" min="0" max="500000" value="150000">
+        <input id="maxSalarySlider" type="range" min="0" max="500000" step="500" value="150000">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chart-wrap" id="chartWrap">
+      <svg class="chart" id="chart" viewBox="0 0 800 440" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <button class="table-toggle" id="tableToggle" type="button">Show data table</button>
+    <div class="table-wrap" id="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Gross salary</th>
+            <th>Income tax</th>
+            <th>Employee NI</th>
+            <th>Take-home</th>
+            <th>Effective rate</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="caveats">
+    Assumes the full amount is paid as regular salary subject to PAYE, with no pension contributions, salary sacrifice,
+    student loan repayments, or other deductions. Personal allowance taper (&minus;£1 per £2 earned over £100,000,
+    exhausted at £125,140) is applied continuously rather than rounded to the nearest pound as HMRC payroll does, so
+    figures near that band are indicative rather than exact. National Insurance assumes standard Category A. Scottish
+    band thresholds are derived from the published 2026/27 figures assuming the standard personal allowance.
+  </p>
+</main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Tax bands, 2026/27 ----------
+
+  // Rest-of-UK / Wales: bands are amounts of taxable income (after personal allowance).
+  const RUK_BANDS = [
+    { upto: 37700, rate: 0.20 },
+    { upto: 125140, rate: 0.40 },
+    { upto: Infinity, rate: 0.45 }
+  ];
+
+  // Scotland: published bands assume the standard £12,570 personal allowance; converted
+  // here to taxable-income (post-allowance) thresholds so the same taper logic applies.
+  const SCOTLAND_BANDS = [
+    { upto: 3967, rate: 0.19 },   // starter
+    { upto: 16956, rate: 0.20 },  // basic
+    { upto: 31092, rate: 0.21 },  // intermediate
+    { upto: 62430, rate: 0.42 },  // higher
+    { upto: 112570, rate: 0.45 }, // advanced
+    { upto: Infinity, rate: 0.48 } // top
+  ];
+
+  const STANDARD_PA = 12570;
+  const NI_PT = 12570;
+  const NI_UEL = 50270;
+  const NI_MAIN_RATE = 0.08;
+  const NI_UPPER_RATE = 0.02;
+
+  function flatRate(country, letter, digit) {
+    if (letter === "BR") return country === "scotland" ? 0.20 : 0.20;
+    if (letter === "D") {
+      if (country === "scotland") {
+        const map = { "0": 0.21, "1": 0.42, "2": 0.45, "3": 0.48 };
+        return map[digit] !== undefined ? map[digit] : null;
+      }
+      const map = { "0": 0.40, "1": 0.45 };
+      return map[digit] !== undefined ? map[digit] : null;
+    }
+    return null;
+  }
+
+  function parseTaxCode(raw) {
+    let code = (raw || "").trim().toUpperCase().replace(/\s+/g, "");
+    if (!code) return { ok: false, error: "Enter a tax code." };
+
+    let country = "ruk";
+    let countryLabel = "England / Wales / Northern Ireland";
+    if (code[0] === "S") {
+      country = "scotland";
+      countryLabel = "Scotland";
+      code = code.slice(1);
+    } else if (code[0] === "C") {
+      country = "ruk";
+      countryLabel = "Wales (same rates as rUK currently)";
+      code = code.slice(1);
+    }
+
+    if (code === "NT") {
+      return { ok: true, type: "nt", country, countryLabel, summary: "No tax deducted on any income." };
+    }
+
+    if (code === "BR") {
+      const rate = flatRate(country, "BR");
+      return { ok: true, type: "flat", rate, country, countryLabel, summary: `Flat ${(rate * 100).toFixed(0)}% (basic rate) on all income, no personal allowance.` };
+    }
+
+    let m = code.match(/^D([0-3])$/);
+    if (m) {
+      const rate = flatRate(country, "D", m[1]);
+      if (rate == null) {
+        return { ok: false, error: `${raw.toUpperCase()} is not a valid code for ${countryLabel}.` };
+      }
+      return { ok: true, type: "flat", rate, country, countryLabel, summary: `Flat ${(rate * 100).toFixed(0)}% on all income, no personal allowance.` };
+    }
+
+    if (code === "0T") {
+      return { ok: true, type: "standard", allowance: 0, country, countryLabel, summary: "No personal allowance; standard bands apply from £0." };
+    }
+
+    m = code.match(/^K(\d+)$/);
+    if (m) {
+      const addBack = parseInt(m[1], 10) * 10;
+      return { ok: true, type: "k", addBack, country, countryLabel, summary: `K code — £${addBack.toLocaleString()} added to taxable income before bands are applied.` };
+    }
+
+    m = code.match(/^(\d{1,4})([LMNT])$/);
+    if (m) {
+      const allowance = parseInt(m[1], 10) * 10;
+      return { ok: true, type: "standard", allowance, country, countryLabel, summary: `Personal allowance £${allowance.toLocaleString()} (before any high-income taper).` };
+    }
+
+    return { ok: false, error: "Unrecognised format. Try 1257L, S1257L, BR, D0, 0T, K475, or NT." };
+  }
+
+  function taperedAllowance(base, gross) {
+    if (gross <= 100000) return base;
+    return Math.max(0, base - (gross - 100000) / 2);
+  }
+
+  function calcIncomeTaxFromTaxable(taxable, bands) {
+    let tax = 0;
+    let prev = 0;
+    for (const band of bands) {
+      const amount = Math.max(0, Math.min(taxable, band.upto) - prev);
+      tax += amount * band.rate;
+      prev = band.upto;
+      if (taxable <= band.upto) break;
+    }
+    return tax;
+  }
+
+  function calcNi(gross) {
+    if (gross <= NI_PT) return 0;
+    if (gross <= NI_UEL) return (gross - NI_PT) * NI_MAIN_RATE;
+    return (NI_UEL - NI_PT) * NI_MAIN_RATE + (gross - NI_UEL) * NI_UPPER_RATE;
+  }
+
+  function computeIncomeTax(gross, parsed) {
+    if (parsed.type === "nt") return 0;
+    if (parsed.type === "flat") return gross * parsed.rate;
+    const bands = parsed.country === "scotland" ? SCOTLAND_BANDS : RUK_BANDS;
+    let taxable;
+    if (parsed.type === "k") {
+      taxable = Math.max(0, gross + parsed.addBack);
+    } else {
+      const allowance = taperedAllowance(parsed.allowance, gross);
+      taxable = Math.max(0, gross - allowance);
+    }
+    return calcIncomeTaxFromTaxable(taxable, bands);
+  }
+
+  function computeForSalary(gross, parsed, includeNi) {
+    const tax = computeIncomeTax(gross, parsed);
+    const ni = includeNi ? calcNi(gross) : 0;
+    const takeHome = Math.max(0, gross - tax - ni);
+    const effectiveRate = gross > 0 ? Math.min(100, ((tax + ni) / gross) * 100) : 0;
+    return { gross, tax, ni, takeHome, effectiveRate };
+  }
+
+  // ---------- "Nice" axis scale ----------
+
+  function niceNum(range, round) {
+    if (range === 0) return 1;
+    const exponent = Math.floor(Math.log10(range));
+    const fraction = range / Math.pow(10, exponent);
+    let niceFraction;
+    if (round) {
+      if (fraction < 1.5) niceFraction = 1;
+      else if (fraction < 3) niceFraction = 2;
+      else if (fraction < 7) niceFraction = 5;
+      else niceFraction = 10;
+    } else {
+      if (fraction <= 1) niceFraction = 1;
+      else if (fraction <= 2) niceFraction = 2;
+      else if (fraction <= 5) niceFraction = 5;
+      else niceFraction = 10;
+    }
+    return niceFraction * Math.pow(10, exponent);
+  }
+
+  function niceScale(min, max, maxTicks) {
+    if (max <= min) max = min + 1;
+    const range = niceNum(max - min, false);
+    const step = niceNum(range / (maxTicks - 1), true);
+    const niceMin = Math.floor(min / step) * step;
+    const niceMax = Math.ceil(max / step) * step;
+    const ticks = [];
+    for (let v = niceMin; v <= niceMax + step / 2; v += step) ticks.push(Math.round(v * 1000) / 1000);
+    return { min: niceMin, max: niceMax, step, ticks };
+  }
+
+  // ---------- DOM refs ----------
+
+  const taxCodeInput = document.getElementById("taxCode");
+  const includeNiInput = document.getElementById("includeNi");
+  const codeChip = document.getElementById("codeChip");
+  const minInput = document.getElementById("minSalaryInput");
+  const maxInput = document.getElementById("maxSalaryInput");
+  const minSlider = document.getElementById("minSalarySlider");
+  const maxSlider = document.getElementById("maxSalarySlider");
+  const svg = document.getElementById("chart");
+  const chartWrap = document.getElementById("chartWrap");
+  const tooltip = document.getElementById("tooltip");
+  const tableToggle = document.getElementById("tableToggle");
+  const tableWrap = document.getElementById("tableWrap");
+  const tableBody = document.getElementById("tableBody");
+
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const W = 800, H = 440;
+  const MARGIN = { top: 56, right: 74, bottom: 40, left: 78 };
+  const plotW = W - MARGIN.left - MARGIN.right;
+  const plotH = H - MARGIN.top - MARGIN.bottom;
+  const N_POINTS = 140;
+
+  let lastData = null;
+
+  function fmtGBP(n, decimals) {
+    return "£" + n.toLocaleString(undefined, { minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0 });
+  }
+
+  function el(tag, attrs) {
+    const e = document.createElementNS(SVG_NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  function getMinMax() {
+    let min = parseFloat(minInput.value) || 0;
+    let max = parseFloat(maxInput.value) || 0;
+    if (max - min < 1000) {
+      if (document.activeElement === maxInput || document.activeElement === maxSlider) {
+        min = Math.max(0, max - 1000);
+      } else {
+        max = min + 1000;
+      }
+    }
+    return { min, max };
+  }
+
+  function syncRangeControls(min, max) {
+    minInput.value = min;
+    maxInput.value = max;
+    minSlider.value = min;
+    maxSlider.value = max;
+  }
+
+  function render() {
+    const parsed = parseTaxCode(taxCodeInput.value);
+    if (!parsed.ok) {
+      codeChip.className = "chip err";
+      codeChip.textContent = parsed.error;
+      svg.innerHTML = "";
+      lastData = null;
+      tableBody.innerHTML = "";
+      onLeave();
+      return;
+    }
+    codeChip.className = "chip";
+    codeChip.innerHTML = "<b>" + parsed.countryLabel + "</b> — " + parsed.summary;
+
+    const { min, max } = getMinMax();
+    syncRangeControls(min, max);
+    const includeNi = includeNiInput.checked;
+
+    const points = [];
+    for (let i = 0; i < N_POINTS; i++) {
+      const gross = min + ((max - min) * i) / (N_POINTS - 1);
+      points.push(computeForSalary(gross, parsed, includeNi));
+    }
+
+    const takeHomeMax = Math.max.apply(null, points.map(p => p.takeHome));
+    const rateMax = Math.max.apply(null, points.map(p => p.effectiveRate));
+
+    const yLeft = niceScale(0, takeHomeMax, 6);
+    const yRight = niceScale(0, Math.max(rateMax, 5), 6);
+
+    const xScale = v => MARGIN.left + ((v - min) / (max - min)) * plotW;
+    const yLeftScale = v => MARGIN.top + plotH - (v / yLeft.max) * plotH;
+    const yRightScale = v => MARGIN.top + plotH - (v / yRight.max) * plotH;
+
+    svg.innerHTML = "";
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+
+    // Gridlines (tied to left axis only)
+    yLeft.ticks.forEach(t => {
+      if (t > yLeft.max) return;
+      const y = yLeftScale(t);
+      svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: y, y2: y, class: "gridline" }));
+      const label = el("text", { x: MARGIN.left - 10, y: y + 4, class: "tick-label", "text-anchor": "end" });
+      label.textContent = "£" + Math.round(t).toLocaleString();
+      svg.appendChild(label);
+    });
+
+    // Right axis ticks (no gridlines)
+    yRight.ticks.forEach(t => {
+      if (t > yRight.max) return;
+      const y = yRightScale(t);
+      const label = el("text", { x: MARGIN.left + plotW + 10, y: y + 4, class: "tick-label" });
+      label.textContent = Math.round(t * 10) / 10 + "%";
+      svg.appendChild(label);
+    });
+
+    // X axis ticks
+    const xTickCount = 6;
+    for (let i = 0; i < xTickCount; i++) {
+      const v = min + ((max - min) * i) / (xTickCount - 1);
+      const x = xScale(v);
+      const label = el("text", { x: x, y: MARGIN.top + plotH + 22, class: "tick-label", "text-anchor": i === 0 ? "start" : (i === xTickCount - 1 ? "end" : "middle") });
+      label.textContent = "£" + Math.round(v).toLocaleString();
+      svg.appendChild(label);
+    }
+
+    // Axis lines
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "axis-line" }));
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: MARGIN.top + plotH, y2: MARGIN.top + plotH, class: "axis-line" }));
+
+    // Axis titles (double as the legend — swatch + text)
+    const swatch1 = el("line", { x1: MARGIN.left - 60, x2: MARGIN.left - 44, y1: 18, y2: 18, stroke: "var(--series-1)", "stroke-width": 2 });
+    svg.appendChild(swatch1);
+    const title1 = el("text", { x: MARGIN.left - 38, y: 22, class: "axis-title" });
+    title1.textContent = "Take-home pay (£/yr, left axis)";
+    svg.appendChild(title1);
+
+    const title2 = el("text", { x: W - 10, y: 22, class: "axis-title", "text-anchor": "end" });
+    title2.textContent = "Effective rate (right axis)";
+    svg.appendChild(title2);
+    const title2Width = title2.getBBox().width;
+    const swatch2 = el("line", { x1: W - 10 - title2Width - 20, x2: W - 10 - title2Width - 4, y1: 18, y2: 18, stroke: "var(--series-2)", "stroke-width": 2 });
+    svg.appendChild(swatch2);
+
+    // Lines
+    const path1 = points.map((p, i) => (i === 0 ? "M" : "L") + xScale(p.gross).toFixed(2) + "," + yLeftScale(p.takeHome).toFixed(2)).join(" ");
+    const path2 = points.map((p, i) => (i === 0 ? "M" : "L") + xScale(p.gross).toFixed(2) + "," + yRightScale(p.effectiveRate).toFixed(2)).join(" ");
+    svg.appendChild(el("path", { d: path1, class: "series-line", stroke: "var(--series-1)" }));
+    svg.appendChild(el("path", { d: path2, class: "series-line", stroke: "var(--series-2)" }));
+
+    // End markers + direct end-labels
+    const lastP = points[points.length - 1];
+    svg.appendChild(el("circle", { cx: xScale(lastP.gross), cy: yLeftScale(lastP.takeHome), r: 4.5, fill: "var(--series-1)", class: "end-dot" }));
+    svg.appendChild(el("circle", { cx: xScale(lastP.gross), cy: yRightScale(lastP.effectiveRate), r: 4.5, fill: "var(--series-2)", class: "end-dot" }));
+
+    const endLabel1 = el("text", { x: xScale(lastP.gross) - 8, y: yLeftScale(lastP.takeHome) - 10, class: "tick-label", "text-anchor": "end" });
+    endLabel1.textContent = fmtGBP(Math.round(lastP.takeHome));
+    svg.appendChild(endLabel1);
+    const endLabel2 = el("text", { x: xScale(lastP.gross) - 8, y: yRightScale(lastP.effectiveRate) - 10, class: "tick-label", "text-anchor": "end" });
+    endLabel2.textContent = (Math.round(lastP.effectiveRate * 10) / 10) + "%";
+    svg.appendChild(endLabel2);
+
+    // Crosshair (hidden until hover)
+    const crosshair = el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "crosshair", visibility: "hidden", id: "crosshairLine" });
+    svg.appendChild(crosshair);
+
+    // Transparent hit-rect for pointer tracking
+    const hitRect = el("rect", { x: MARGIN.left, y: MARGIN.top, width: plotW, height: plotH, fill: "transparent" });
+    svg.appendChild(hitRect);
+
+    lastData = { points, min, max, xScale, yLeftScale, yRightScale, includeNi, parsed };
+
+    hitRect.addEventListener("pointermove", onHover);
+    hitRect.addEventListener("pointerleave", onLeave);
+
+    renderTable();
+  }
+
+  function onHover(evt) {
+    if (!lastData) return;
+    const rect = svg.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const xInViewBox = (evt.clientX - rect.left) * scaleX;
+    const frac = Math.min(1, Math.max(0, (xInViewBox - MARGIN.left) / plotW));
+    const idx = Math.round(frac * (lastData.points.length - 1));
+    const p = lastData.points[idx];
+
+    const crosshair = document.getElementById("crosshairLine");
+    const x = lastData.xScale(p.gross);
+    crosshair.setAttribute("x1", x);
+    crosshair.setAttribute("x2", x);
+    crosshair.setAttribute("visibility", "visible");
+
+    const scaleFactor = rect.width / W;
+    const wrapRect = chartWrap.getBoundingClientRect();
+    const tipX = (x * scaleFactor) + (rect.left - wrapRect.left);
+    const tipY = 10;
+
+    tooltip.innerHTML = "";
+    const salaryLine = document.createElement("div");
+    salaryLine.className = "t-salary";
+    salaryLine.textContent = fmtGBP(Math.round(p.gross)) + " gross";
+    tooltip.appendChild(salaryLine);
+
+    function row(color, label, value) {
+      const r = document.createElement("div");
+      r.className = "t-row";
+      const key = document.createElement("span");
+      key.className = "key";
+      key.style.background = color;
+      r.appendChild(key);
+      const lbl = document.createElement("span");
+      lbl.textContent = label;
+      r.appendChild(lbl);
+      const val = document.createElement("span");
+      val.className = "val";
+      val.textContent = value;
+      r.appendChild(val);
+      tooltip.appendChild(r);
+    }
+
+    row("var(--series-1)", "Take-home", fmtGBP(Math.round(p.takeHome)));
+    row("var(--series-2)", "Effective rate", (Math.round(p.effectiveRate * 10) / 10) + "%");
+    row("transparent", "Income tax", fmtGBP(Math.round(p.tax)));
+    if (lastData.includeNi) row("transparent", "Employee NI", fmtGBP(Math.round(p.ni)));
+
+    const left = Math.min(Math.max(tipX + 12, 0), chartWrap.clientWidth - 190);
+    tooltip.style.left = left + "px";
+    tooltip.style.top = tipY + "px";
+    tooltip.classList.add("show");
+  }
+
+  function onLeave() {
+    tooltip.classList.remove("show");
+    const crosshair = document.getElementById("crosshairLine");
+    if (crosshair) crosshair.setAttribute("visibility", "hidden");
+  }
+
+  function renderTable() {
+    if (!lastData) { tableBody.innerHTML = ""; return; }
+    const ROWS = 21;
+    const { min, max, includeNi, parsed } = lastData;
+    let html = "";
+    for (let i = 0; i < ROWS; i++) {
+      const gross = min + ((max - min) * i) / (ROWS - 1);
+      const p = computeForSalary(gross, parsed, includeNi);
+      html += "<tr>" +
+        "<td>" + fmtGBP(Math.round(p.gross)) + "</td>" +
+        "<td>" + fmtGBP(Math.round(p.tax)) + "</td>" +
+        "<td>" + fmtGBP(Math.round(p.ni)) + "</td>" +
+        "<td>" + fmtGBP(Math.round(p.takeHome)) + "</td>" +
+        "<td>" + (Math.round(p.effectiveRate * 10) / 10) + "%</td>" +
+        "</tr>";
+    }
+    tableBody.innerHTML = html;
+  }
+
+  // ---------- Events ----------
+
+  taxCodeInput.addEventListener("input", render);
+  includeNiInput.addEventListener("change", render);
+
+  minInput.addEventListener("input", () => { minSlider.value = minInput.value; render(); });
+  maxInput.addEventListener("input", () => { maxSlider.value = maxInput.value; render(); });
+  minSlider.addEventListener("input", () => { minInput.value = minSlider.value; render(); });
+  maxSlider.addEventListener("input", () => { maxInput.value = maxSlider.value; render(); });
+
+  tableToggle.addEventListener("click", () => {
+    const showing = tableWrap.classList.toggle("show");
+    tableToggle.textContent = showing ? "Hide data table" : "Show data table";
+  });
+
+  let resizeTimer;
+  let lastWidth = chartWrap.clientWidth;
+  const ro = new ResizeObserver(() => {
+    if (chartWrap.clientWidth === lastWidth) return;
+    lastWidth = chartWrap.clientWidth;
+    onLeave();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(render, 100);
+  });
+  ro.observe(chartWrap);
+
+  render();
+})();
+</script>
+</body>
+</html>
