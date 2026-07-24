@@ -507,9 +507,21 @@
     return e;
   }
 
+  function expandSliderBoundIfNeeded(value) {
+    const current = parseFloat(maxSlider.max);
+    if (value > current) {
+      const newBound = Math.ceil(value / 50000) * 50000;
+      minSlider.max = newBound;
+      maxSlider.max = newBound;
+      minInput.max = newBound;
+      maxInput.max = newBound;
+    }
+  }
+
   function getMinMax() {
     let min = parseFloat(minInput.value) || 0;
     let max = parseFloat(maxInput.value) || 0;
+    expandSliderBoundIfNeeded(Math.max(min, max));
     if (max - min < 1000) {
       if (document.activeElement === maxInput || document.activeElement === maxSlider) {
         min = Math.max(0, max - 1000);
