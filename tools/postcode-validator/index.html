@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UK Postcode Validator — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+    --bad: #dc2626;
+    --good: #16a34a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+      --bad: #f87171;
+      --good: #4ade80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main {
+    width: 100%;
+    max-width: 680px;
+  }
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin: 0.75rem 0 0.3rem;
+  }
+  p.sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.9rem;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    font-size: 1.1rem;
+    letter-spacing: 0.03em;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--fg);
+    font-family: inherit;
+  }
+  textarea {
+    font-size: 0.95rem;
+    letter-spacing: normal;
+    resize: vertical;
+    min-height: 7rem;
+  }
+  .status-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .status-line .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: none;
+  }
+  .dot.ok { background: var(--good); }
+  .dot.bad { background: var(--bad); }
+  .dot.neutral { background: var(--muted); }
+  .status-line.ok { color: var(--good); }
+  .status-line.bad { color: var(--bad); }
+
+  .kv {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .kv:last-child { border-bottom: none; }
+  .kv .k { color: var(--muted); }
+  .kv .v { color: var(--fg); text-align: right; font-variant-numeric: tabular-nums; }
+
+  .real-check {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .real-status {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.75rem;
+  }
+  .checkbox-row input { width: 16px; height: 16px; }
+
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-top: 0.75rem;
+  }
+  .btn:disabled { opacity: 0.6; cursor: default; }
+
+  .err-box {
+    font-size: 0.82rem;
+    color: var(--bad);
+    margin-top: 0.6rem;
+    display: none;
+  }
+  .note {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+  }
+
+  .table-wrap { margin-top: 0.9rem; overflow-x: auto; max-height: 480px; overflow-y: auto; }
+  table.data-table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+  table.data-table th, table.data-table td {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  table.data-table th {
+    color: var(--muted);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: var(--card);
+  }
+  table.data-table td { color: var(--fg); }
+  .tag {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 600;
+  }
+  .tag.ok { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+  .tag.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+  .tag.muted { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+
+  .caveats { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+  .caveats a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>UK Postcode Validator</h1>
+  <p class="sub">Check whether a UK postcode is correctly formatted, and optionally whether it's a real, in-use postcode.</p>
+
+  <div class="card">
+    <label for="pcInput">Postcode</label>
+    <input id="pcInput" type="text" placeholder="e.g. SW1A 1AA" autocomplete="off" spellcheck="false" value="SW1A 1AA">
+    <div class="status-line" id="formatStatus"></div>
+
+    <div id="breakdown"></div>
+
+    <div class="real-check">
+      <div class="real-status" id="realStatus">Enter a valid postcode to check if it's real.</div>
+      <div id="realDetails"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Validate a list</h2>
+    <label for="bulkInput">One postcode per line</label>
+    <textarea id="bulkInput" placeholder="SW1A 1AA&#10;EC1A 1BB&#10;not a postcode"></textarea>
+    <div class="checkbox-row">
+      <input id="bulkRealCheck" type="checkbox">
+      <label for="bulkRealCheck" style="margin:0;">Also check which are real, in-use postcodes (uses postcodes.io)</label>
+    </div>
+    <button class="btn" id="validateListBtn" type="button">Validate list</button>
+    <div class="err-box" id="bulkErr"></div>
+    <div class="table-wrap" id="bulkTableWrap" style="display:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Input</th>
+            <th>Normalised</th>
+            <th>Format</th>
+            <th id="bulkRealHeader" style="display:none;">Real postcode</th>
+          </tr>
+        </thead>
+        <tbody id="bulkTableBody"></tbody>
+      </table>
+    </div>
+    <p class="note">Lists are capped at 500 postcodes per check.</p>
+  </div>
+
+  <p class="caveats">
+    Format checking runs entirely in your browser using the regular expressions from
+    <a href="https://github.com/ideal-postcodes/postcode" target="_blank" rel="noopener">ideal-postcodes/postcode</a>
+    (MIT licensed) &mdash; nothing is sent anywhere for this part. "Real postcode" checks call
+    <a href="https://postcodes.io" target="_blank" rel="noopener">postcodes.io</a>, a free, open-source UK postcode
+    API run by the same team; the postcodes you check are sent to that service to look up. A correctly formatted
+    postcode isn't necessarily in use (it may never have been allocated, or may have been retired) &mdash; that's
+    exactly what the "real postcode" check is for.
+  </p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Postcode parsing (adapted from ideal-postcodes/postcode, MIT licensed) ----------
+
+  const POSTCODE_REGEX = /^[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2}$/;
+  const AREA_REGEX = /^[A-Z]{1,2}/;
+  const DISTRICT_SPLIT_REGEX = /^([A-Z]{1,2}\d)([A-Z])$/;
+
+  function sanitize(s) {
+    return s.replace(/\s+/g, "").toUpperCase();
+  }
+
+  function parsePostcode(raw) {
+    const clean = sanitize(raw);
+    if (!POSTCODE_REGEX.test(clean)) return { valid: false };
+
+    const incode = clean.slice(-3);
+    const outcode = clean.slice(0, clean.length - 3);
+    const area = outcode.match(AREA_REGEX)[0];
+    const districtSplit = outcode.match(DISTRICT_SPLIT_REGEX);
+    const district = districtSplit ? districtSplit[1] : outcode;
+    const subDistrict = districtSplit ? outcode : null;
+    const sector = outcode + " " + incode[0];
+    const unit = incode.slice(1);
+
+    return {
+      valid: true,
+      postcode: outcode + " " + incode,
+      outcode: outcode,
+      incode: incode,
+      area: area,
+      district: district,
+      subDistrict: subDistrict,
+      sector: sector,
+      unit: unit
+    };
+  }
+
+  // ---------- Single postcode UI ----------
+
+  const pcInput = document.getElementById("pcInput");
+  const formatStatus = document.getElementById("formatStatus");
+  const breakdown = document.getElementById("breakdown");
+  const realStatus = document.getElementById("realStatus");
+  const realDetails = document.getElementById("realDetails");
+
+  function kvRow(label, value) {
+    return '<div class="kv"><span class="k">' + label + '</span><span class="v">' + value + '</span></div>';
+  }
+
+  let realCheckTimer = null;
+  let realCheckSeq = 0;
+
+  function renderFormat() {
+    const parsed = parsePostcode(pcInput.value);
+
+    if (!pcInput.value.trim()) {
+      formatStatus.className = "status-line";
+      formatStatus.innerHTML = '<span class="dot neutral"></span> Enter a postcode';
+      breakdown.innerHTML = "";
+      realStatus.textContent = "Enter a valid postcode to check if it's real.";
+      realDetails.innerHTML = "";
+      return { valid: false };
+    }
+
+    if (!parsed.valid) {
+      formatStatus.className = "status-line bad";
+      formatStatus.innerHTML = '<span class="dot bad"></span> Not a validly formatted UK postcode';
+      breakdown.innerHTML = "";
+      realStatus.textContent = "Enter a valid postcode to check if it's real.";
+      realDetails.innerHTML = "";
+      return parsed;
+    }
+
+    formatStatus.className = "status-line ok";
+    formatStatus.innerHTML = '<span class="dot ok"></span> Valid format &mdash; ' + parsed.postcode;
+
+    let html = kvRow("Area", parsed.area);
+    html += kvRow("District", parsed.district);
+    if (parsed.subDistrict) html += kvRow("Sub-district", parsed.subDistrict);
+    html += kvRow("Sector", parsed.sector);
+    html += kvRow("Unit", parsed.unit);
+    breakdown.innerHTML = html;
+
+    return parsed;
+  }
+
+  function scheduleRealCheck(parsed) {
+    clearTimeout(realCheckTimer);
+    if (!parsed.valid) return;
+    realStatus.textContent = "Checking…";
+    realDetails.innerHTML = "";
+    const mySeq = ++realCheckSeq;
+    realCheckTimer = setTimeout(() => runRealCheck(parsed.postcode, mySeq), 500);
+  }
+
+  function runRealCheck(postcode, mySeq) {
+    fetch("https://api.postcodes.io/postcodes/" + encodeURIComponent(postcode))
+      .then(r => r.json())
+      .then(data => {
+        if (mySeq !== realCheckSeq) return; // stale response, input has changed since
+        if (data.status === 200 && data.result) {
+          const r = data.result;
+          realStatus.innerHTML = '<span style="color:var(--good); font-weight:600;">&#10003; Real, in-use postcode</span>';
+          let html = kvRow("Country", r.country || "&mdash;");
+          html += kvRow("Region", r.region || "&mdash;");
+          html += kvRow("Admin district", r.admin_district || "&mdash;");
+          html += kvRow("Ward", r.admin_ward || "&mdash;");
+          if (r.parliamentary_constituency) html += kvRow("Constituency", r.parliamentary_constituency);
+          html += kvRow("Coordinates", r.latitude.toFixed(5) + ", " + r.longitude.toFixed(5));
+          realDetails.innerHTML = html;
+        } else {
+          realStatus.innerHTML = '<span style="color:var(--bad); font-weight:600;">&#10007; Not found in the postcode database</span>';
+          realDetails.innerHTML = "";
+        }
+      })
+      .catch(() => {
+        if (mySeq !== realCheckSeq) return;
+        realStatus.innerHTML = '<span style="color:var(--bad); font-weight:600;">Couldn’t reach the lookup service</span>';
+        realDetails.innerHTML = "";
+      });
+  }
+
+  pcInput.addEventListener("input", () => {
+    const parsed = renderFormat();
+    scheduleRealCheck(parsed);
+  });
+
+  // ---------- Bulk validation ----------
+
+  const bulkInput = document.getElementById("bulkInput");
+  const bulkRealCheck = document.getElementById("bulkRealCheck");
+  const validateListBtn = document.getElementById("validateListBtn");
+  const bulkErr = document.getElementById("bulkErr");
+  const bulkTableWrap = document.getElementById("bulkTableWrap");
+  const bulkTableBody = document.getElementById("bulkTableBody");
+  const bulkRealHeader = document.getElementById("bulkRealHeader");
+
+  const MAX_BULK = 500;
+  const BATCH_SIZE = 100;
+
+  function chunk(arr, size) {
+    const out = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+  }
+
+  function realTag(result) {
+    if (result === undefined) return '<span class="tag muted">&mdash;</span>';
+    if (result === "error") return '<span class="tag muted">lookup failed</span>';
+    return result ? '<span class="tag ok">real</span>' : '<span class="tag bad">not found</span>';
+  }
+
+  validateListBtn.addEventListener("click", () => {
+    bulkErr.style.display = "none";
+    const lines = bulkInput.value.split("\n").map(l => l.trim()).filter(l => l.length);
+
+    if (!lines.length) {
+      bulkErr.textContent = "Enter at least one postcode, one per line.";
+      bulkErr.style.display = "block";
+      bulkTableWrap.style.display = "none";
+      return;
+    }
+    if (lines.length > MAX_BULK) {
+      bulkErr.textContent = "That's " + lines.length + " lines &mdash; please limit lists to " + MAX_BULK + " postcodes.";
+      bulkErr.style.display = "block";
+      bulkTableWrap.style.display = "none";
+      return;
+    }
+
+    const parsedRows = lines.map(line => ({ input: line, parsed: parsePostcode(line) }));
+    const doRealCheck = bulkRealCheck.checked;
+    bulkRealHeader.style.display = doRealCheck ? "" : "none";
+
+    renderBulkTable(parsedRows, doRealCheck ? null : undefined);
+    bulkTableWrap.style.display = "block";
+
+    if (!doRealCheck) return;
+
+    validateListBtn.disabled = true;
+    validateListBtn.textContent = "Checking…";
+
+    const validPostcodes = parsedRows.filter(r => r.parsed.valid).map(r => r.parsed.postcode);
+    const batches = chunk(validPostcodes, BATCH_SIZE);
+    const realResults = {};
+
+    Promise.all(batches.map(batch =>
+      fetch("https://api.postcodes.io/postcodes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postcodes: batch })
+      })
+        .then(r => r.json())
+        .then(data => {
+          (data.result || []).forEach(item => {
+            realResults[item.query] = !!item.result;
+          });
+        })
+        .catch(() => {
+          batch.forEach(pc => { realResults[pc] = "error"; });
+        })
+    )).then(() => {
+      parsedRows.forEach(row => {
+        if (row.parsed.valid) row.real = realResults[row.parsed.postcode];
+      });
+      renderBulkTable(parsedRows, true);
+      validateListBtn.disabled = false;
+      validateListBtn.textContent = "Validate list";
+    });
+  });
+
+  function renderBulkTable(rows, showReal) {
+    let html = "";
+    rows.forEach((row, i) => {
+      const p = row.parsed;
+      html += "<tr>" +
+        "<td>" + (i + 1) + "</td>" +
+        "<td>" + escapeHtml(row.input) + "</td>" +
+        "<td>" + (p.valid ? p.postcode : "&mdash;") + "</td>" +
+        "<td>" + (p.valid ? '<span class="tag ok">valid</span>' : '<span class="tag bad">invalid</span>') + "</td>" +
+        (showReal !== undefined ? "<td>" + (p.valid ? realTag(row.real) : '<span class="tag muted">&mdash;</span>') + "</td>" : "") +
+        "</tr>";
+    });
+    bulkTableBody.innerHTML = html;
+  }
+
+  function escapeHtml(s) {
+    const div = document.createElement("div");
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // ---------- Init ----------
+
+  scheduleRealCheck(renderFormat());
+})();
+</script>
+</body>
+</html>
