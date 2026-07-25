@@ -13,6 +13,7 @@
     --card: #f5f5f7;
     --border: #ddd;
     --accent: #2563eb;
+    --star: #d97706;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -22,6 +23,7 @@
       --card: #1e1e1e;
       --border: #333;
       --accent: #60a5fa;
+      --star: #fbbf24;
     }
   }
   * { box-sizing: border-box; }
@@ -36,7 +38,7 @@
   }
   main {
     width: 100%;
-    max-width: 640px;
+    max-width: 680px;
   }
   h1 {
     font-size: 1.6rem;
@@ -45,12 +47,45 @@
   p.sub {
     color: var(--muted);
     margin-top: 0;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 999px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip.active {
+    background: var(--accent);
+    border-color: transparent;
+    color: #fff;
+  }
+  .chip .count {
+    font-size: 0.75rem;
+    opacity: 0.75;
+  }
+
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 1rem;
+  }
+  .tile-wrap {
+    position: relative;
   }
   a.tile {
     display: block;
@@ -60,6 +95,7 @@
     padding: 1.1rem 1.2rem;
     text-decoration: none;
     color: var(--fg);
+    height: 100%;
   }
   a.tile:hover {
     border-color: var(--accent);
@@ -67,10 +103,39 @@
   a.tile .name {
     font-weight: 600;
     margin-bottom: 0.25rem;
+    padding-right: 1.6rem;
   }
   a.tile .desc {
     font-size: 0.85rem;
     color: var(--muted);
+  }
+  a.tile .cats {
+    margin-top: 0.6rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .star-btn {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.7rem;
+    background: none;
+    border: none;
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--border);
+    padding: 0.15rem;
+  }
+  .star-btn.favourited { color: var(--star); }
+  .star-btn:hover { color: var(--star); }
+
+  .empty-state {
+    color: var(--muted);
+    font-size: 0.9rem;
+    padding: 2rem 0;
+    text-align: center;
   }
 </style>
 </head>
@@ -79,41 +144,193 @@
   <h1>tools</h1>
   <p class="sub">Small, free, single-page utilities. No sign-up, nothing tracked.</p>
 
-  <div class="grid">
-    <a class="tile" href="tools/example/">
-      <div class="name">Percentage Calculator</div>
-      <div class="desc">Quick X% of Y, and X as a % of Y.</div>
-    </a>
-    <a class="tile" href="tools/imei-validator/">
-      <div class="name">IMEI Validator</div>
-      <div class="desc">Generate the 15th check digit, or verify an existing one.</div>
-    </a>
-    <a class="tile" href="tools/uk-take-home-pay/">
-      <div class="name">UK Take-Home Pay vs Salary</div>
-      <div class="desc">Tax code &rarr; take-home pay and effective rate across a salary range.</div>
-    </a>
-    <a class="tile" href="tools/loan-calculator/">
-      <div class="name">Loan Calculator</div>
-      <div class="desc">Monthly payment, total interest, and total repaid, with a full schedule.</div>
-    </a>
-    <a class="tile" href="tools/whats-my-ip/">
-      <div class="name">What's My IP</div>
-      <div class="desc">Your public IP, network location, browser, and device &mdash; what any site sees.</div>
-    </a>
-    <a class="tile" href="tools/tiered-pricing-calculator/">
-      <div class="name">Tiered Pricing Calculator</div>
-      <div class="desc">Model graduated pay-per-use pricing &mdash; total cost and effective rate across a volume range.</div>
-    </a>
-    <a class="tile" href="tools/qr-code-generator/">
-      <div class="name">QR Code Generator</div>
-      <div class="desc">Encode any text or URL and download as PNG, SVG, or PDF.</div>
-    </a>
-    <a class="tile" href="tools/postcode-validator/">
-      <div class="name">UK Postcode Validator</div>
-      <div class="desc">Check format and whether it's a real, in-use postcode &mdash; single or bulk.</div>
-    </a>
-    <!-- Add a new <a class="tile" href="tools/<name>/"> entry here for each new tool -->
-  </div>
+  <div class="chips" id="chips"></div>
+  <div class="grid" id="grid"></div>
 </main>
+
+<script>
+(function () {
+  "use strict";
+
+  const TOOLS = [
+    {
+      name: "Percentage Calculator",
+      desc: "Quick X% of Y, and X as a % of Y.",
+      href: "tools/example/",
+      categories: ["calculators"]
+    },
+    {
+      name: "IMEI Validator",
+      desc: "Generate the 15th check digit, or verify an existing one.",
+      href: "tools/imei-validator/",
+      categories: ["validation"]
+    },
+    {
+      name: "UK Take-Home Pay vs Salary",
+      desc: "Tax code → take-home pay and effective rate across a salary range.",
+      href: "tools/uk-take-home-pay/",
+      categories: ["financial", "calculators"]
+    },
+    {
+      name: "Loan Calculator",
+      desc: "Monthly payment, total interest, and total repaid, with a full schedule.",
+      href: "tools/loan-calculator/",
+      categories: ["financial", "calculators"]
+    },
+    {
+      name: "What's My IP",
+      desc: "Your public IP, network location, browser, and device — what any site sees.",
+      href: "tools/whats-my-ip/",
+      categories: ["network-engineering"]
+    },
+    {
+      name: "Tiered Pricing Calculator",
+      desc: "Model graduated pay-per-use pricing — total cost and effective rate across a volume range.",
+      href: "tools/tiered-pricing-calculator/",
+      categories: ["financial", "calculators"]
+    },
+    {
+      name: "QR Code Generator",
+      desc: "Encode any text or URL and download as PNG, SVG, or PDF.",
+      href: "tools/qr-code-generator/",
+      categories: ["generators"]
+    },
+    {
+      name: "UK Postcode Validator",
+      desc: "Check format and whether it's a real, in-use postcode — single or bulk.",
+      href: "tools/postcode-validator/",
+      categories: ["validation"]
+    }
+    // Add a new tool here: { name, desc, href, categories: [one or more of CATEGORY_LABELS below] }
+  ];
+
+  const CATEGORY_LABELS = {
+    financial: "Financial",
+    "network-engineering": "Network Engineering",
+    validation: "Validation",
+    generators: "Generators",
+    calculators: "Calculators"
+  };
+
+  const FAVOURITES_KEY = "jobbltools.favourites.v1";
+
+  function loadFavourites() {
+    try {
+      const raw = localStorage.getItem(FAVOURITES_KEY);
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch (e) {
+      return new Set();
+    }
+  }
+
+  function saveFavourites(set) {
+    localStorage.setItem(FAVOURITES_KEY, JSON.stringify(Array.from(set)));
+  }
+
+  let favourites = loadFavourites();
+
+  function categoryFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("cat") || "all";
+  }
+
+  let selectedCategory = categoryFromUrl();
+
+  function setCategory(cat) {
+    selectedCategory = cat;
+    const url = new URL(window.location.href);
+    if (cat === "all") {
+      url.searchParams.delete("cat");
+    } else {
+      url.searchParams.set("cat", cat);
+    }
+    history.replaceState(null, "", url.pathname + url.search);
+    render();
+  }
+
+  const chipsEl = document.getElementById("chips");
+  const gridEl = document.getElementById("grid");
+
+  function toolsForCategory(cat) {
+    if (cat === "all") return TOOLS;
+    if (cat === "favourites") return TOOLS.filter(t => favourites.has(t.href));
+    return TOOLS.filter(t => t.categories.includes(cat));
+  }
+
+  function renderChips() {
+    const chips = [
+      { id: "all", label: "All", count: TOOLS.length },
+      { id: "favourites", label: "★ Favourites", count: favourites.size }
+    ];
+    Object.keys(CATEGORY_LABELS).forEach(id => {
+      chips.push({ id, label: CATEGORY_LABELS[id], count: toolsForCategory(id).length });
+    });
+
+    chipsEl.innerHTML = "";
+    chips.forEach(chip => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "chip" + (chip.id === selectedCategory ? " active" : "");
+      btn.innerHTML = chip.label + ' <span class="count">' + chip.count + "</span>";
+      btn.addEventListener("click", () => setCategory(chip.id));
+      chipsEl.appendChild(btn);
+    });
+  }
+
+  function renderGrid() {
+    const tools = toolsForCategory(selectedCategory);
+    gridEl.innerHTML = "";
+
+    if (!tools.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = selectedCategory === "favourites"
+        ? "No favourites yet — click the star on any tool to add it here."
+        : "No tools in this category yet.";
+      gridEl.appendChild(empty);
+      return;
+    }
+
+    tools.forEach(tool => {
+      const wrap = document.createElement("div");
+      wrap.className = "tile-wrap";
+
+      const star = document.createElement("button");
+      star.type = "button";
+      star.className = "star-btn" + (favourites.has(tool.href) ? " favourited" : "");
+      star.setAttribute("aria-label", favourites.has(tool.href) ? "Remove from favourites" : "Add to favourites");
+      star.textContent = favourites.has(tool.href) ? "★" : "☆";
+      star.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (favourites.has(tool.href)) favourites.delete(tool.href);
+        else favourites.add(tool.href);
+        saveFavourites(favourites);
+        render();
+      });
+      wrap.appendChild(star);
+
+      const a = document.createElement("a");
+      a.className = "tile";
+      a.href = tool.href;
+      const catLabels = tool.categories.map(c => CATEGORY_LABELS[c]).join(" · ");
+      a.innerHTML =
+        '<div class="name">' + tool.name + "</div>" +
+        '<div class="desc">' + tool.desc + "</div>" +
+        '<div class="cats">' + catLabels + "</div>";
+      wrap.appendChild(a);
+
+      gridEl.appendChild(wrap);
+    });
+  }
+
+  function render() {
+    renderChips();
+    renderGrid();
+  }
+
+  render();
+})();
+</script>
 </body>
 </html>

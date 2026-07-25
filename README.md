@@ -21,8 +21,16 @@ Each tool lives in its own folder under `tools/` and is a single self-contained
 
 1. Copy `tools/example` to `tools/<your-tool-name>`.
 2. Edit `tools/<your-tool-name>/index.html`.
-3. Add a card for it in the root `index.html`.
+3. Add an entry to the `TOOLS` array in the root `index.html` — `{ name, desc, href, categories: [...] }`.
+   Reuse an existing category id from `CATEGORY_LABELS` where it fits, or add a new one there if none do.
 4. Commit and push — GitHub Pages redeploys automatically within a minute or two.
+
+## Navigation
+
+The landing page (`index.html`) renders its grid from a `TOOLS` array rather than static HTML, with category
+filter chips (deep-linkable via `?cat=<id>`) and a browser-local-storage-backed favourites system (a star on each
+tile, filterable via the "Favourites" chip). Nothing here is server-side — favourites live only in the visitor's
+own browser.
 
 ## Local preview
 
