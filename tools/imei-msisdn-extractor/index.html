@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IMEI &amp; MSISDN Extractor — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+    --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+      --bad: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main {
+    width: 100%;
+    max-width: 700px;
+  }
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin: 0.75rem 0 0.3rem;
+  }
+  p.sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.9rem;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  textarea {
+    width: 100%;
+    min-height: 9rem;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--fg);
+    resize: vertical;
+  }
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+  }
+  input[type="file"] {
+    font-size: 0.85rem;
+    color: var(--fg);
+  }
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin: 0.9rem 0;
+  }
+  .divider::before, .divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+  .btn.ghost {
+    background: var(--surface);
+    color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+
+  .summary-line {
+    font-size: 0.95rem;
+    margin-bottom: 0.9rem;
+  }
+  .summary-line b { color: var(--accent); }
+
+  .downloads {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin: 0.9rem 0 1.2rem;
+  }
+
+  table.found-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  table.found-table th, table.found-table td {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+  table.found-table th { color: var(--muted); font-weight: 600; }
+  table.found-table td.value { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  table.found-table td.count { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .table-wrap { max-height: 320px; overflow-y: auto; margin-bottom: 1rem; }
+  .section-empty { color: var(--muted); font-size: 0.85rem; }
+
+  .caveats { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>IMEI &amp; MSISDN Extractor</h1>
+  <p class="sub">Scan a CSV or text file (or pasted text) for IMEIs and UK/international mobile numbers, and download what's found as a clean, one-per-line CSV.</p>
+
+  <div class="card">
+    <div class="file-row">
+      <label style="margin:0;" for="fileInput">Choose a .csv or .txt file</label>
+    </div>
+    <div class="file-row">
+      <input id="fileInput" type="file" accept=".csv,.txt,text/csv,text/plain">
+    </div>
+
+    <div class="divider">or paste text</div>
+
+    <label for="pasteInput">Text to scan</label>
+    <textarea id="pasteInput">Customer order #4471234 received.
+Device 1 IMEI: 35-693803-564380-9
+Contact number: 07700 900123
+Also reachable on +44 7700 900123 (same number, different format)
+Device 2 IMEI: 490154203237518
+Bare international format: 447700900456
+Invoice ref: 2024-06-15-0091</textarea>
+    <div style="margin-top:0.75rem;">
+      <button class="btn" id="scanBtn" type="button">Scan pasted text</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="summary-line" id="summaryLine">Scan some text or choose a file to get started.</div>
+
+    <div class="downloads" id="downloads" style="display:none;">
+      <button class="btn ghost" id="downloadImeiBtn" type="button">Download IMEIs CSV</button>
+      <button class="btn ghost" id="downloadMsisdnBtn" type="button">Download MSISDNs CSV</button>
+      <button class="btn ghost" id="downloadAllBtn" type="button">Download combined CSV</button>
+    </div>
+
+    <h2>IMEIs found</h2>
+    <div class="table-wrap" id="imeiTableWrap"></div>
+
+    <h2>MSISDNs found</h2>
+    <div class="table-wrap" id="msisdnTableWrap"></div>
+  </div>
+
+  <p class="caveats">
+    Everything runs in your browser — files and pasted text are never uploaded anywhere. Detection: any bare
+    15-digit number that passes the IMEI Luhn check digit is treated as an IMEI (hyphens, dots, and spaces within
+    a number are ignored). Mobile numbers are matched as UK local (<code>07&hellip;</code>, 11 digits), UK
+    international without a plus (<code>447&hellip;</code>, 12 digits), or any <code>+</code>-prefixed number of
+    8&ndash;15 digits — all normalised to <code>+&lt;digits&gt;</code> form in the results, with duplicates (even
+    across different formats of the same number) collapsed and counted. This is a lightweight pattern match, not a
+    full international phone-number parser: numbers using "(0)" trunk-prefix notation, or non-UK domestic formats
+    without a leading +, won't be picked up.
+  </p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  const fileInput = document.getElementById("fileInput");
+  const pasteInput = document.getElementById("pasteInput");
+  const scanBtn = document.getElementById("scanBtn");
+  const summaryLine = document.getElementById("summaryLine");
+  const downloads = document.getElementById("downloads");
+  const downloadImeiBtn = document.getElementById("downloadImeiBtn");
+  const downloadMsisdnBtn = document.getElementById("downloadMsisdnBtn");
+  const downloadAllBtn = document.getElementById("downloadAllBtn");
+  const imeiTableWrap = document.getElementById("imeiTableWrap");
+  const msisdnTableWrap = document.getElementById("msisdnTableWrap");
+
+  // Matches a plausible number-like token: an optional leading +, then a run
+  // of digits mixed with spaces/hyphens/dots (common formatting separators),
+  // bounded loosely — the strict length/Luhn checks in classifyToken() are
+  // the real precision mechanism, so this just needs to find candidates
+  // without merging two adjacent-but-separate numbers into one.
+  const TOKEN_REGEX = /\+?\d[\d\-.\s]{4,24}\d/g;
+
+  function luhnValid15(digits) {
+    const rev = digits.split("").reverse().map(Number);
+    let sum = 0;
+    for (let i = 0; i < rev.length; i++) {
+      let d = rev[i];
+      if (i % 2 === 1) {
+        d *= 2;
+        if (d > 9) d -= 9;
+      }
+      sum += d;
+    }
+    return sum % 10 === 0;
+  }
+
+  function classifyToken(raw) {
+    const hasPlus = raw.trim().charAt(0) === "+";
+    const digits = raw.replace(/[^\d]/g, "");
+
+    if (hasPlus) {
+      if (digits.length >= 8 && digits.length <= 15) {
+        return { type: "msisdn", value: "+" + digits };
+      }
+      return null;
+    }
+    if (digits.length === 15) {
+      return luhnValid15(digits) ? { type: "imei", value: digits } : null;
+    }
+    if (digits.length === 11 && digits.startsWith("07")) {
+      return { type: "msisdn", value: "+44" + digits.slice(1) };
+    }
+    if (digits.length === 12 && digits.startsWith("447")) {
+      return { type: "msisdn", value: "+" + digits };
+    }
+    return null;
+  }
+
+  function scanText(text) {
+    const imeis = new Map();
+    const msisdns = new Map();
+    let match;
+    TOKEN_REGEX.lastIndex = 0;
+    while ((match = TOKEN_REGEX.exec(text)) !== null) {
+      const result = classifyToken(match[0]);
+      if (!result) continue;
+      const map = result.type === "imei" ? imeis : msisdns;
+      map.set(result.value, (map.get(result.value) || 0) + 1);
+    }
+    return { imeis, msisdns };
+  }
+
+  function renderTable(wrapEl, map, emptyLabel) {
+    if (!map.size) {
+      wrapEl.innerHTML = '<div class="section-empty">' + emptyLabel + "</div>";
+      return;
+    }
+    const rows = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+    let html = '<table class="found-table"><thead><tr><th>Value</th><th style="text-align:right;">Occurrences</th></tr></thead><tbody>';
+    rows.forEach(([value, count]) => {
+      html += "<tr><td class=\"value\">" + value + '</td><td class="count">' + count + "</td></tr>";
+    });
+    html += "</tbody></table>";
+    wrapEl.innerHTML = html;
+  }
+
+  function triggerDownload(text, filename) {
+    const blob = new Blob([text], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function toCsv(values) {
+    return values.join("\n") + (values.length ? "\n" : "");
+  }
+
+  let lastImeis = [];
+  let lastMsisdns = [];
+
+  function runScan(text) {
+    const { imeis, msisdns } = scanText(text);
+    lastImeis = Array.from(imeis.keys());
+    lastMsisdns = Array.from(msisdns.keys());
+
+    renderTable(imeiTableWrap, imeis, "No IMEIs found.");
+    renderTable(msisdnTableWrap, msisdns, "No MSISDNs found.");
+
+    const total = lastImeis.length + lastMsisdns.length;
+    summaryLine.innerHTML = "Found <b>" + lastImeis.length + "</b> distinct IMEI" + (lastImeis.length === 1 ? "" : "s") +
+      " and <b>" + lastMsisdns.length + "</b> distinct MSISDN" + (lastMsisdns.length === 1 ? "" : "s") + ".";
+
+    downloads.style.display = total ? "flex" : "none";
+    downloadImeiBtn.disabled = !lastImeis.length;
+    downloadMsisdnBtn.disabled = !lastMsisdns.length;
+    downloadAllBtn.disabled = !total;
+  }
+
+  scanBtn.addEventListener("click", () => runScan(pasteInput.value));
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => runScan(String(reader.result));
+    reader.onerror = () => {
+      summaryLine.textContent = "Couldn't read that file.";
+    };
+    reader.readAsText(file);
+  });
+
+  downloadImeiBtn.addEventListener("click", () => triggerDownload(toCsv(lastImeis), "imeis.csv"));
+  downloadMsisdnBtn.addEventListener("click", () => triggerDownload(toCsv(lastMsisdns), "msisdns.csv"));
+  downloadAllBtn.addEventListener("click", () => triggerDownload(toCsv([...lastImeis, ...lastMsisdns]), "imeis-and-msisdns.csv"));
+
+  // ---------- Init ----------
+  runScan(pasteInput.value);
+})();
+</script>
+</body>
+</html>
