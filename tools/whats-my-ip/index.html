@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What's My IP — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+    --bad: #dc2626;
+    --good: #16a34a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+      --bad: #f87171;
+      --good: #4ade80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main {
+    width: 100%;
+    max-width: 680px;
+  }
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin: 0.75rem 0 0.3rem;
+  }
+  p.sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.9rem;
+    color: var(--fg);
+  }
+  .ip-hero {
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    word-break: break-all;
+    margin-bottom: 0.2rem;
+  }
+  .ip-hero-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .kv {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .kv:last-child { border-bottom: none; }
+  .kv .k { color: var(--muted); flex: 0 0 auto; }
+  .kv .v {
+    color: var(--fg);
+    text-align: right;
+    word-break: break-word;
+    font-variant-numeric: tabular-nums;
+  }
+  .kv .v.mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+  }
+  .kv .v.err { color: var(--bad); }
+  .kv .v.ok { color: var(--good); }
+
+  button.action {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  button.action:disabled { opacity: 0.6; cursor: default; }
+  button.ghost {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  a.maplink {
+    color: var(--accent);
+    font-size: 0.85rem;
+  }
+
+  .caveats {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .caveats a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>What's My IP</h1>
+  <p class="sub">Everything a normal website can see about your connection, browser, and device — nothing more.</p>
+
+  <div class="card" data-section="Network">
+    <div class="ip-hero-label">Public IP address</div>
+    <div class="ip-hero" id="ipHero">Loading&hellip;</div>
+    <div class="kv"><span class="k">Network / ISP</span><span class="v" id="ispValue">Loading&hellip;</span></div>
+    <div class="kv"><span class="k">Approximate location</span><span class="v" id="cityValue">Loading&hellip;</span></div>
+    <div class="kv"><span class="k">Postal code</span><span class="v" id="postalValue">Loading&hellip;</span></div>
+    <div class="kv"><span class="k">Approximate coordinates</span><span class="v" id="ipLatLon">Loading&hellip;</span></div>
+    <div class="kv"><span class="k">Timezone (from IP)</span><span class="v" id="ipTz">Loading&hellip;</span></div>
+  </div>
+
+  <div class="card" data-section="Precise location">
+    <h2>Precise location (requires your permission)</h2>
+    <div class="kv"><span class="k">Status</span><span class="v" id="geoStatus">Not requested</span></div>
+    <div class="kv"><span class="k">Latitude</span><span class="v" id="geoLat">—</span></div>
+    <div class="kv"><span class="k">Longitude</span><span class="v" id="geoLon">—</span></div>
+    <div class="kv"><span class="k">Accuracy</span><span class="v" id="geoAccuracy">—</span></div>
+    <div style="margin-top:0.75rem; display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+      <button class="action" id="geoBtn">Get precise location</button>
+      <a class="maplink" id="geoMapLink" href="#" style="display:none;" target="_blank" rel="noopener">View on map &rarr;</a>
+    </div>
+  </div>
+
+  <div class="card" data-section="Browser">
+    <h2>Browser</h2>
+    <div class="kv"><span class="k">User agent</span><span class="v mono" id="uaValue">—</span></div>
+    <div class="kv"><span class="k">Language</span><span class="v" id="langValue">—</span></div>
+    <div class="kv"><span class="k">All languages</span><span class="v" id="langsValue">—</span></div>
+    <div class="kv"><span class="k">Cookies enabled</span><span class="v" id="cookiesValue">—</span></div>
+    <div class="kv"><span class="k">Do Not Track</span><span class="v" id="dntValue">—</span></div>
+    <div class="kv"><span class="k">Online</span><span class="v" id="onlineValue">—</span></div>
+    <div class="kv"><span class="k">Referrer</span><span class="v" id="referrerValue">—</span></div>
+  </div>
+
+  <div class="card" data-section="Device &amp; display">
+    <h2>Device &amp; display</h2>
+    <div class="kv"><span class="k">Platform</span><span class="v" id="platformValue">—</span></div>
+    <div class="kv"><span class="k">Screen resolution</span><span class="v" id="screenValue">—</span></div>
+    <div class="kv"><span class="k">Available screen size</span><span class="v" id="availScreenValue">—</span></div>
+    <div class="kv"><span class="k">Viewport size</span><span class="v" id="viewportValue">—</span></div>
+    <div class="kv"><span class="k">Device pixel ratio</span><span class="v" id="dprValue">—</span></div>
+    <div class="kv"><span class="k">Color depth</span><span class="v" id="colorDepthValue">—</span></div>
+    <div class="kv"><span class="k">CPU cores</span><span class="v" id="coresValue">—</span></div>
+    <div class="kv"><span class="k">Device memory</span><span class="v" id="memoryValue">—</span></div>
+    <div class="kv"><span class="k">Touch support</span><span class="v" id="touchValue">—</span></div>
+    <div class="kv"><span class="k">Network connection</span><span class="v" id="connValue">—</span></div>
+    <div class="kv"><span class="k">GPU renderer</span><span class="v" id="gpuValue">—</span></div>
+    <div class="kv"><span class="k">Timezone (browser)</span><span class="v" id="browserTz">—</span></div>
+    <div class="kv"><span class="k">Local time</span><span class="v" id="localTime">—</span></div>
+  </div>
+
+  <button class="ghost" id="copyBtn" type="button">Copy full report as text</button>
+
+  <p class="caveats">
+    Public IP and network location are looked up via <a href="https://ipapi.co" target="_blank" rel="noopener">ipapi.co</a>
+    — unlike the other tools here, this one needs a third-party lookup, since a static page has no way to see its
+    own visitor's IP address otherwise (this is exactly what any website's server logs would show automatically,
+    permission-free). If it's blocked by an ad-blocker or privacy extension, or you're offline, that section will
+    show an error instead. Network-based location is approximate (often city-level, sometimes off); precise
+    location only appears if you click the button above and grant permission, and is never sent anywhere — it's
+    read directly from your browser and shown only to you.
+  </p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  function setText(id, text, cls) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    if (cls) el.className = "v " + cls;
+  }
+
+  // ---------- Network (IP + IP-based location) ----------
+
+  fetch("https://ipapi.co/json/")
+    .then(r => {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then(data => {
+      if (data.error) throw new Error(data.reason || "lookup failed");
+      document.getElementById("ipHero").textContent = data.ip || "Unknown";
+      setText("ispValue", data.org || "Unknown");
+      const cityBits = [data.city, data.region, data.country_name].filter(Boolean);
+      setText("cityValue", cityBits.length ? cityBits.join(", ") : "Unknown");
+      setText("postalValue", data.postal || "Unknown");
+      setText("ipLatLon", (data.latitude != null && data.longitude != null)
+        ? data.latitude.toFixed(3) + ", " + data.longitude.toFixed(3)
+        : "Unknown");
+      setText("ipTz", data.timezone || "Unknown");
+    })
+    .catch(err => {
+      document.getElementById("ipHero").textContent = "Unavailable";
+      const msg = "Couldn't reach the lookup service (blocked by an ad-blocker/privacy extension, or offline)";
+      ["ispValue", "cityValue", "postalValue", "ipLatLon", "ipTz"].forEach(id => setText(id, msg, "err"));
+    });
+
+  // ---------- Precise location ----------
+
+  const geoBtn = document.getElementById("geoBtn");
+  const geoMapLink = document.getElementById("geoMapLink");
+
+  geoBtn.addEventListener("click", () => {
+    if (!("geolocation" in navigator)) {
+      setText("geoStatus", "Not supported by this browser", "err");
+      return;
+    }
+    geoBtn.disabled = true;
+    setText("geoStatus", "Requesting permission&hellip;");
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        geoBtn.disabled = false;
+        const { latitude, longitude, accuracy } = pos.coords;
+        setText("geoStatus", "Granted", "ok");
+        setText("geoLat", latitude.toFixed(6));
+        setText("geoLon", longitude.toFixed(6));
+        setText("geoAccuracy", "±" + Math.round(accuracy) + " m");
+        geoMapLink.href = "https://www.openstreetmap.org/?mlat=" + latitude + "&mlon=" + longitude + "#map=15/" + latitude + "/" + longitude;
+        geoMapLink.style.display = "inline";
+      },
+      err => {
+        geoBtn.disabled = false;
+        const messages = {
+          1: "Permission denied",
+          2: "Position unavailable",
+          3: "Timed out"
+        };
+        setText("geoStatus", messages[err.code] || err.message, "err");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  });
+
+  // ---------- Browser ----------
+
+  setText("uaValue", navigator.userAgent || "Unknown");
+  setText("langValue", navigator.language || "Unknown");
+  setText("langsValue", (navigator.languages && navigator.languages.length) ? navigator.languages.join(", ") : "Unknown");
+  setText("cookiesValue", navigator.cookieEnabled ? "Yes" : "No");
+  setText("dntValue", (function () {
+    const dnt = navigator.doNotTrack || window.doNotTrack;
+    if (dnt === "1" || dnt === "yes") return "On";
+    if (dnt === "0") return "Off";
+    return "Not set";
+  })());
+  setText("onlineValue", navigator.onLine ? "Yes" : "No");
+  setText("referrerValue", document.referrer || "(none — direct visit, or referrer withheld)");
+
+  // ---------- Device & display ----------
+
+  setText("platformValue", navigator.platform || "Not reported");
+  setText("screenValue", screen.width + " × " + screen.height);
+  setText("availScreenValue", screen.availWidth + " × " + screen.availHeight);
+
+  function updateViewport() {
+    setText("viewportValue", window.innerWidth + " × " + window.innerHeight);
+  }
+  updateViewport();
+  window.addEventListener("resize", updateViewport);
+
+  setText("dprValue", window.devicePixelRatio || 1);
+  setText("colorDepthValue", screen.colorDepth + "-bit");
+  setText("coresValue", navigator.hardwareConcurrency ? String(navigator.hardwareConcurrency) : "Not reported");
+  setText("memoryValue", navigator.deviceMemory ? navigator.deviceMemory + " GB (approximate)" : "Not reported (Chrome/Edge only)");
+  setText("touchValue", navigator.maxTouchPoints > 0 ? "Yes (" + navigator.maxTouchPoints + " points)" : "No");
+
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  setText("connValue", conn
+    ? [conn.effectiveType, conn.downlink != null ? conn.downlink + " Mbps" : null, conn.rtt != null ? conn.rtt + " ms RTT" : null].filter(Boolean).join(", ")
+    : "Not available (Chrome/Android only)");
+
+  setText("gpuValue", (function () {
+    try {
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+      if (!gl) return "WebGL not supported";
+      const ext = gl.getExtension("WEBGL_debug_renderer_info");
+      if (!ext) return "Masked by browser privacy settings";
+      return gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || "Unknown";
+    } catch (e) {
+      return "Not available";
+    }
+  })());
+
+  setText("browserTz", Intl.DateTimeFormat().resolvedOptions().timeZone || "Unknown");
+  setText("localTime", new Date().toString());
+
+  // ---------- Copy report ----------
+
+  document.getElementById("copyBtn").addEventListener("click", () => {
+    const lines = [];
+    document.querySelectorAll(".card[data-section]").forEach(card => {
+      lines.push("== " + card.dataset.section + " ==");
+      const hero = card.querySelector(".ip-hero");
+      if (hero) lines.push("Public IP address: " + hero.textContent);
+      card.querySelectorAll(".kv").forEach(row => {
+        const k = row.querySelector(".k").textContent;
+        const v = row.querySelector(".v").textContent;
+        lines.push(k + ": " + v);
+      });
+      lines.push("");
+    });
+    const text = lines.join("\n");
+    const btn = document.getElementById("copyBtn");
+    const original = btn.textContent;
+
+    function flash(label) {
+      btn.textContent = label;
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    }
+
+    function legacyCopy() {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(textarea);
+      flash(ok ? "Copied!" : "Couldn't copy — select and copy manually");
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => flash("Copied!"),
+        () => legacyCopy()
+      );
+    } else {
+      legacyCopy();
+    }
+  });
+})();
+</script>
+</body>
+</html>
