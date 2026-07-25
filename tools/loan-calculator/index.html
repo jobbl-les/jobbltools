@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loan Calculator — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main {
+    width: 100%;
+    max-width: 680px;
+  }
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin: 0.75rem 0 0.3rem;
+  }
+  p.sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  input, select {
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--fg);
+  }
+  select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .grid3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+  }
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .field { margin-bottom: 0; }
+  .note {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+    min-height: 1.1em;
+  }
+  .err {
+    font-size: 0.82rem;
+    color: #dc2626;
+    margin-top: 0.6rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    .err { color: #f87171; }
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+  .stat-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+  }
+  .stat-value {
+    font-size: 1.35rem;
+    font-weight: 600;
+  }
+  .stat-value.accent { color: var(--accent); }
+
+  .table-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+  .table-wrap { margin-top: 0.75rem; overflow-x: auto; display: none; max-height: 420px; overflow-y: auto; }
+  .table-wrap.show { display: block; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.82rem;
+  }
+  th, td {
+    text-align: right;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  th:first-child, td:first-child { text-align: left; }
+  th {
+    color: var(--muted);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: var(--card);
+  }
+  td { color: var(--fg); }
+
+  .caveats {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>Loan Calculator</h1>
+  <p class="sub">Enter a loan and see the monthly payment, total interest, and total repaid.</p>
+
+  <div class="card">
+    <div class="grid3">
+      <div class="field">
+        <label for="principal">Principal (£)</label>
+        <input id="principal" type="number" min="0" step="100" value="10000">
+      </div>
+      <div class="field">
+        <label for="rate">Annual interest rate (%)</label>
+        <input id="rate" type="number" min="0" step="0.1" value="6.5">
+      </div>
+      <div class="field">
+        <label for="months">Number of months</label>
+        <input id="months" type="number" min="1" step="1" value="36">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="timing">Interest accrued</label>
+        <select id="timing">
+          <option value="arrears">In arrears (reducing balance)</option>
+          <option value="advance">In advance (add-on / flat-rate)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="compounding">Compounding</label>
+        <select id="compounding">
+          <option value="monthly">Monthly</option>
+          <option value="daily">Daily</option>
+        </select>
+        <div class="note" id="compoundingNote"></div>
+      </div>
+    </div>
+
+    <div class="err" id="errBox" style="display:none;"></div>
+  </div>
+
+  <div class="card">
+    <div class="stats">
+      <div>
+        <div class="stat-label">Monthly payment</div>
+        <div class="stat-value accent" id="statPayment">—</div>
+      </div>
+      <div>
+        <div class="stat-label">Total interest paid</div>
+        <div class="stat-value" id="statInterest">—</div>
+      </div>
+      <div>
+        <div class="stat-label">Total amount repaid</div>
+        <div class="stat-value" id="statRepaid">—</div>
+      </div>
+    </div>
+
+    <button class="table-toggle" id="tableToggle" type="button">Show monthly payment table</button>
+    <div class="table-wrap" id="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Payment</th>
+            <th>Interest</th>
+            <th>Principal</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="caveats">
+    "In arrears" models a standard reducing-balance loan: interest each period is calculated on the outstanding
+    balance, as with almost all mortgages and personal loans. "In advance" models a flat-rate / add-on loan: total
+    interest is calculated once on the original principal for the full term and spread evenly across payments —
+    interest doesn't reduce as the balance is paid down, so for the same nominal rate an add-on loan costs more
+    than a reducing-balance one. Compounding only applies to the reducing-balance calculation; "daily" compounds
+    at 365 days/year to an equivalent monthly rate rather than using actual calendar days. Figures assume every
+    payment is made on time and in full, with no fees.
+  </p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  const principalInput = document.getElementById("principal");
+  const rateInput = document.getElementById("rate");
+  const monthsInput = document.getElementById("months");
+  const timingSelect = document.getElementById("timing");
+  const compoundingSelect = document.getElementById("compounding");
+  const compoundingNote = document.getElementById("compoundingNote");
+  const errBox = document.getElementById("errBox");
+  const statPayment = document.getElementById("statPayment");
+  const statInterest = document.getElementById("statInterest");
+  const statRepaid = document.getElementById("statRepaid");
+  const tableToggle = document.getElementById("tableToggle");
+  const tableWrap = document.getElementById("tableWrap");
+  const tableBody = document.getElementById("tableBody");
+
+  function fmtGBP(n) {
+    return "£" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function monthlyRateFromAnnual(annualRatePct, compounding) {
+    const annual = annualRatePct / 100;
+    if (compounding === "daily") {
+      return Math.pow(1 + annual / 365, 365 / 12) - 1;
+    }
+    return annual / 12;
+  }
+
+  function computeArrears(principal, annualRatePct, months, compounding) {
+    const r = monthlyRateFromAnnual(annualRatePct, compounding);
+    let payment;
+    if (r === 0) {
+      payment = principal / months;
+    } else {
+      payment = (principal * r) / (1 - Math.pow(1 + r, -months));
+    }
+
+    const rows = [];
+    let balance = principal;
+    for (let i = 1; i <= months; i++) {
+      let interest = balance * r;
+      let principalPortion = payment - interest;
+      if (i === months) {
+        // absorb any floating-point drift so the schedule ends exactly at zero
+        principalPortion = balance;
+        payment = principalPortion + interest;
+      }
+      balance = Math.max(0, balance - principalPortion);
+      rows.push({ month: i, payment: principalPortion + interest, interest, principal: principalPortion, balance });
+    }
+
+    const totalRepaid = rows.reduce((s, r2) => s + r2.payment, 0);
+    const totalInterest = rows.reduce((s, r2) => s + r2.interest, 0);
+    return { payment: rows[0].payment, totalInterest, totalRepaid, rows };
+  }
+
+  function computeAdvance(principal, annualRatePct, months) {
+    const totalInterest = principal * (annualRatePct / 100) * (months / 12);
+    const totalRepaid = principal + totalInterest;
+    const payment = totalRepaid / months;
+    const interestPerMonth = totalInterest / months;
+    const principalPerMonth = principal / months;
+
+    const rows = [];
+    let balance = principal;
+    for (let i = 1; i <= months; i++) {
+      let principalPortion = principalPerMonth;
+      if (i === months) principalPortion = balance;
+      balance = Math.max(0, balance - principalPortion);
+      rows.push({ month: i, payment: principalPortion + interestPerMonth, interest: interestPerMonth, principal: principalPortion, balance });
+    }
+
+    return { payment, totalInterest, totalRepaid, rows };
+  }
+
+  function render() {
+    const principal = parseFloat(principalInput.value);
+    const ratePct = parseFloat(rateInput.value);
+    const months = parseInt(monthsInput.value, 10);
+    const timing = timingSelect.value;
+    const compounding = compoundingSelect.value;
+
+    compoundingSelect.disabled = timing === "advance";
+    compoundingNote.textContent = timing === "advance"
+      ? "Not applicable — add-on interest doesn't compound."
+      : "";
+
+    if (!(principal > 0) || !(ratePct >= 0) || !(months >= 1) || !Number.isFinite(months)) {
+      errBox.style.display = "block";
+      errBox.textContent = "Enter a principal greater than 0, a rate of 0 or more, and at least 1 month.";
+      statPayment.textContent = "—";
+      statInterest.textContent = "—";
+      statRepaid.textContent = "—";
+      tableBody.innerHTML = "";
+      return;
+    }
+    errBox.style.display = "none";
+
+    const result = timing === "advance"
+      ? computeAdvance(principal, ratePct, months)
+      : computeArrears(principal, ratePct, months, compounding);
+
+    statPayment.textContent = fmtGBP(result.payment);
+    statInterest.textContent = fmtGBP(result.totalInterest);
+    statRepaid.textContent = fmtGBP(result.totalRepaid);
+
+    tableBody.innerHTML = result.rows.map(r => (
+      "<tr>" +
+      "<td>" + r.month + "</td>" +
+      "<td>" + fmtGBP(r.payment) + "</td>" +
+      "<td>" + fmtGBP(r.interest) + "</td>" +
+      "<td>" + fmtGBP(r.principal) + "</td>" +
+      "<td>" + fmtGBP(r.balance) + "</td>" +
+      "</tr>"
+    )).join("");
+  }
+
+  [principalInput, rateInput, monthsInput, timingSelect, compoundingSelect].forEach(el => {
+    el.addEventListener("input", render);
+    el.addEventListener("change", render);
+  });
+
+  tableToggle.addEventListener("click", () => {
+    const showing = tableWrap.classList.toggle("show");
+    tableToggle.textContent = showing ? "Hide monthly payment table" : "Show monthly payment table";
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
