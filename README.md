@@ -1,4 +1,4 @@
-# jobbltools
+# tools
 
 A small collection of free, single-page utilities (calculators, generators, validators) hosted on GitHub Pages.
 
