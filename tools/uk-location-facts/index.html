@@ -279,6 +279,21 @@
       });
   }
 
+  // postcodes.io's nearest-postcode lookup defaults to a 100m search radius —
+  // easy to miss a real postcode with (a park, a rural road, a retail estate,
+  // or just an imprecise GPS fix), so explicitly widen it to the max allowed
+  // 2000m, then fall back further to their 20km "widesearch" mode before
+  // giving up.
+  function reverseGeocode(lat, lon) {
+    return fetchJson("https://api.postcodes.io/postcodes?lon=" + lon + "&lat=" + lat + "&limit=1&radius=2000")
+      .then(data => {
+        const nearest = (data.result || [])[0];
+        if (nearest) return nearest;
+        return fetchJson("https://api.postcodes.io/postcodes?lon=" + lon + "&lat=" + lat + "&widesearch=true&limit=1")
+          .then(data2 => (data2.result || [])[0] || null);
+      });
+  }
+
   function haversineKm(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -328,9 +343,8 @@
 
   function locationFromPlace(place) {
     const displayName = place.name_2 ? place.name_1 + " (" + place.name_2 + ")" : place.name_1;
-    return fetchJson("https://api.postcodes.io/postcodes?lon=" + place.longitude + "&lat=" + place.latitude + "&limit=1")
-      .then(data => {
-        const nearest = (data.result || [])[0];
+    return reverseGeocode(place.latitude, place.longitude)
+      .then(nearest => {
         if (!nearest) {
           // Fall back to the place's own (thinner) data if no postcode is nearby
           return {
@@ -695,9 +709,8 @@
     navigator.geolocation.getCurrentPosition(
       pos => {
         setStatus("Resolving your location…");
-        fetchJson("https://api.postcodes.io/postcodes?lon=" + pos.coords.longitude + "&lat=" + pos.coords.latitude + "&limit=1")
-          .then(data => {
-            const nearest = (data.result || [])[0];
+        reverseGeocode(pos.coords.latitude, pos.coords.longitude)
+          .then(nearest => {
             if (!nearest) throw new Error("Couldn't resolve your location to a UK area.");
             setStatus("");
             queryInput.value = nearest.postcode;
