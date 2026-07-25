@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conway's Game of Life — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main { width: 100%; max-width: 820px; }
+  a.back { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 1.4rem; margin: 0.75rem 0 0.3rem; }
+  p.sub { color: var(--muted); font-size: 0.9rem; margin-top: 0; margin-bottom: 1.25rem; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  canvas#golCanvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: pointer;
+    border-radius: 8px;
+    image-rendering: pixelated;
+    background: var(--surface);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+    flex-wrap: wrap;
+  }
+  .controls button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .controls button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+  }
+  .controls button:hover { border-color: var(--accent); }
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .speed-row input[type="range"] { width: 140px; accent-color: var(--accent); }
+  .stats { font-size: 0.82rem; color: var(--muted); margin-left: auto; }
+
+  .caveats { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+  .caveats a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>Conway's Game of Life</h1>
+  <p class="sub">Starts spelling "TOOLS", then evolves under the standard rules. Click any cell to toggle it.</p>
+
+  <div class="card">
+    <canvas id="golCanvas" width="770" height="308" role="img"
+      aria-label="Conway's Game of Life board, starting as the word TOOLS. Click any cell to toggle it alive or dead."></canvas>
+    <div class="controls">
+      <button type="button" id="playPause" class="primary">Pause</button>
+      <button type="button" id="step">Step</button>
+      <button type="button" id="resetWord">Reset to TOOLS</button>
+      <button type="button" id="randomize">Randomise</button>
+      <button type="button" id="clear">Clear</button>
+      <div class="speed-row">
+        <label for="speed">Speed</label>
+        <input type="range" id="speed" min="40" max="500" step="10" value="180">
+      </div>
+      <span class="stats" id="stats"></span>
+    </div>
+  </div>
+
+  <p class="caveats">
+    Conway's Game of Life: each cell lives or dies each generation based on its eight neighbours — a live cell with
+    fewer than two or more than three live neighbours dies, a dead cell with exactly three live neighbours comes to
+    life, and everything else stays as it is (the classic "B3/S23" rule). The board wraps at the edges (a torus), so
+    patterns like gliders cycle around indefinitely instead of running off the edge. Text patterns like "TOOLS" are
+    not stable structures, so don't be surprised when it dissolves into blinkers and still lifes within a few
+    generations &mdash; that's normal. Read more on
+    <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life" target="_blank" rel="noopener">Wikipedia</a>.
+  </p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var COLS = 110, ROWS = 44, CELL = 7;
+  var canvas = document.getElementById("golCanvas");
+  var ctx = canvas.getContext("2d");
+  var playPauseBtn = document.getElementById("playPause");
+  var stepBtn = document.getElementById("step");
+  var resetBtn = document.getElementById("resetWord");
+  var randomizeBtn = document.getElementById("randomize");
+  var clearBtn = document.getElementById("clear");
+  var speedInput = document.getElementById("speed");
+  var statsEl = document.getElementById("stats");
+
+  // A tiny 5x7 dot-matrix font — just the four letters "tools" needs.
+  var FONT = {
+    T: ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+    O: ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+    L: ["10000", "10000", "10000", "10000", "10000", "10000", "11111"],
+    S: ["01111", "10000", "10000", "01110", "00001", "00001", "11110"]
+  };
+  var WORD = "TOOLS";
+  var LETTER_W = 5, LETTER_H = 7, LETTER_GAP = 1;
+
+  var grid = new Uint8Array(COLS * ROWS);
+  var generation = 0;
+  var running = true;
+  var deadSince = null;
+  var timer = null;
+  var intervalMs = parseInt(speedInput.value, 10);
+
+  function idx(x, y) { return y * COLS + x; }
+
+  function clearGrid() {
+    grid = new Uint8Array(COLS * ROWS);
+    generation = 0;
+    deadSince = null;
+  }
+
+  // Seeds the grid with "TOOLS" plus a scattering of random live cells, so
+  // the board doesn't evolve identically every time it resets.
+  function seedWord() {
+    clearGrid();
+
+    var patternWidth = WORD.length * LETTER_W + (WORD.length - 1) * LETTER_GAP;
+    var startX = Math.floor((COLS - patternWidth) / 2);
+    var startY = Math.floor((ROWS - LETTER_H) / 2);
+
+    var cx = startX;
+    for (var i = 0; i < WORD.length; i++) {
+      var glyph = FONT[WORD[i]];
+      for (var row = 0; row < LETTER_H; row++) {
+        for (var col = 0; col < LETTER_W; col++) {
+          if (glyph[row].charAt(col) === "1") {
+            var gx = cx + col, gy = startY + row;
+            if (gx >= 0 && gx < COLS && gy >= 0 && gy < ROWS) grid[idx(gx, gy)] = 1;
+          }
+        }
+      }
+      cx += LETTER_W + LETTER_GAP;
+    }
+
+    for (var n = 0; n < 40; n++) {
+      var rx = Math.floor(Math.random() * COLS);
+      var ry = Math.floor(Math.random() * ROWS);
+      grid[idx(rx, ry)] = 1;
+    }
+  }
+
+  function randomizeGrid() {
+    clearGrid();
+    for (var i = 0; i < grid.length; i++) {
+      grid[i] = Math.random() < 0.28 ? 1 : 0;
+    }
+  }
+
+  function countLive() {
+    var count = 0;
+    for (var i = 0; i < grid.length; i++) count += grid[i];
+    return count;
+  }
+
+  // Standard B3/S23 rules on a toroidal (wrapping) board, so patterns like
+  // gliders cycle around indefinitely instead of running off a dead edge.
+  function step() {
+    var next = new Uint8Array(COLS * ROWS);
+    for (var y = 0; y < ROWS; y++) {
+      for (var x = 0; x < COLS; x++) {
+        var neighbours = 0;
+        for (var dy = -1; dy <= 1; dy++) {
+          for (var dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            var nx = (x + dx + COLS) % COLS;
+            var ny = (y + dy + ROWS) % ROWS;
+            neighbours += grid[idx(nx, ny)];
+          }
+        }
+        var alive = grid[idx(x, y)];
+        next[idx(x, y)] = (alive && (neighbours === 2 || neighbours === 3)) || (!alive && neighbours === 3) ? 1 : 0;
+      }
+    }
+    grid = next;
+    generation++;
+
+    var live = countLive();
+    if (live === 0) {
+      if (deadSince === null) deadSince = Date.now();
+      if (Date.now() - deadSince > 2000) seedWord();
+    } else {
+      deadSince = null;
+    }
+  }
+
+  function draw() {
+    var css = getComputedStyle(document.documentElement);
+    var accent = css.getPropertyValue("--accent").trim() || "#2563eb";
+    var surface = css.getPropertyValue("--surface").trim() || "#fcfcfb";
+
+    ctx.fillStyle = surface;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = accent;
+    for (var y = 0; y < ROWS; y++) {
+      for (var x = 0; x < COLS; x++) {
+        if (grid[idx(x, y)]) {
+          ctx.fillRect(x * CELL + 0.5, y * CELL + 0.5, CELL - 1, CELL - 1);
+        }
+      }
+    }
+    statsEl.textContent = "Generation " + generation + " · " + countLive() + " live cells";
+  }
+
+  function tick() {
+    step();
+    draw();
+  }
+
+  function scheduleTimer() {
+    clearInterval(timer);
+    if (running) timer = setInterval(tick, intervalMs);
+  }
+
+  canvas.addEventListener("click", function (evt) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    var x = Math.floor((evt.clientX - rect.left) * scaleX / CELL);
+    var y = Math.floor((evt.clientY - rect.top) * scaleY / CELL);
+    if (x >= 0 && x < COLS && y >= 0 && y < ROWS) {
+      grid[idx(x, y)] ^= 1;
+      deadSince = null;
+      draw();
+    }
+  });
+
+  playPauseBtn.addEventListener("click", function () {
+    running = !running;
+    playPauseBtn.textContent = running ? "Pause" : "Play";
+    playPauseBtn.className = running ? "primary" : "";
+    scheduleTimer();
+  });
+
+  stepBtn.addEventListener("click", tick);
+
+  resetBtn.addEventListener("click", function () {
+    seedWord();
+    draw();
+  });
+
+  randomizeBtn.addEventListener("click", function () {
+    randomizeGrid();
+    draw();
+  });
+
+  clearBtn.addEventListener("click", function () {
+    clearGrid();
+    draw();
+  });
+
+  speedInput.addEventListener("input", function () {
+    intervalMs = parseInt(speedInput.value, 10);
+    scheduleTimer();
+  });
+
+  // draw() reads colours from CSS custom properties at paint time, so if
+  // the OS/browser colour scheme changes while paused (no tick pending),
+  // the canvas would otherwise sit there with stale, wrong-theme colours
+  // until the next interaction. Repaint immediately when it changes.
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+  }
+
+  seedWord();
+  draw();
+  scheduleTimer();
+})();
+</script>
+</body>
+</html>
