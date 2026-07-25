@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salary vs Dividend Extraction Optimiser — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+    --bad: #dc2626;
+    --good: #16a34a;
+    --warn-bg: #fffbeb;
+    --warn-border: #f59e0b;
+    --warn-fg: #92400e;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --series-1: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+      --bad: #f87171;
+      --good: #4ade80;
+      --warn-bg: #2a2210;
+      --warn-border: #b45309;
+      --warn-fg: #fbbf24;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --series-1: #3987e5;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main { width: 100%; max-width: 900px; }
+  a.back { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 1.4rem; margin: 0.75rem 0 0.3rem; }
+  p.sub { color: var(--muted); font-size: 0.9rem; margin-top: 0; margin-bottom: 1rem; }
+
+  .disclaimer {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    color: var(--warn-fg);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+  }
+  .disclaimer strong { display: block; margin-bottom: 0.25rem; font-size: 0.9rem; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card h2 { font-size: 0.95rem; margin: 0 0 0.9rem; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.3rem; }
+  input[type="number"], input[type="text"], select {
+    width: 100%;
+    padding: 0.55rem 0.65rem;
+    font-size: 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--fg);
+  }
+  .checkbox-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 1.6rem; }
+  .checkbox-row input { width: 16px; height: 16px; }
+  .checkbox-row label { margin: 0; color: var(--fg); font-size: 0.88rem; }
+  .field-note { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+
+  .warnings-card {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    color: var(--warn-fg);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    font-size: 0.86rem;
+  }
+  .warnings-card h2 { color: var(--warn-fg); font-size: 0.95rem; margin: 0 0 0.5rem; }
+  .warnings-card ul { margin: 0; padding-left: 1.2rem; }
+  .warnings-card li { margin-bottom: 0.3rem; }
+
+  .chart-wrap { position: relative; margin-top: 0.25rem; }
+  svg.chart {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+    border-radius: 8px;
+  }
+  svg.chart:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .axis-title { font-size: 12px; fill: var(--muted); }
+  .tick-label { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .axis-line { stroke: var(--axis); stroke-width: 1; }
+  .series-line { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .crosshair { stroke: var(--axis); stroke-width: 1; pointer-events: none; }
+  .pt-optimum { fill: var(--good); stroke: var(--surface); stroke-width: 2; }
+  .pt-endpoint { fill: var(--muted); stroke: var(--surface); stroke-width: 2; }
+  .pt-selected { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+  .chart-legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); margin-bottom: 0.5rem; }
+  .chart-legend .key { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .chart-legend .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.08s;
+    z-index: 5;
+  }
+  .tooltip.show { opacity: 1; }
+  .tooltip .t-head { font-weight: 600; color: var(--fg); margin-bottom: 0.35rem; }
+  .tooltip .t-row { display: flex; justify-content: space-between; gap: 0.9rem; }
+  .tooltip .t-row .v { font-weight: 600; color: var(--fg); }
+
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.75rem;
+  }
+  .compare-tile {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.8rem 0.9rem;
+    background: var(--surface);
+  }
+  .compare-tile.is-best { border-color: var(--good); }
+  .compare-tile .label { font-size: 0.78rem; color: var(--muted); display: flex; justify-content: space-between; }
+  .compare-tile .badge { color: var(--good); font-weight: 600; font-size: 0.7rem; }
+  .compare-tile .value { font-size: 1.2rem; font-weight: 700; margin-top: 0.15rem; }
+  .compare-tile .sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+
+  table.detail-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+  table.detail-table td { padding: 0.42rem 0.2rem; border-bottom: 1px solid var(--border); }
+  table.detail-table td.k { color: var(--muted); }
+  table.detail-table td.v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  table.detail-table tr:last-child td { border-bottom: none; }
+  table.detail-table tr.total td { font-weight: 700; }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  .caveats { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>Salary vs Dividend Extraction Optimiser</h1>
+  <p class="sub">Compare every feasible split of a company profit pool between director's salary/bonus and dividends, for a single director-shareholder.</p>
+
+  <div class="disclaimer" role="note">
+    <strong>Illustrative estimator only — not tax or accounting advice.</strong>
+    This tool models a simplified single-director, single-shareholder company against the assumptions and exclusions
+    listed at the bottom of this page. Dividends can only lawfully be paid from adequate distributable reserves and
+    require proper company authorisation (board minutes and dividend vouchers) — this tool does not check reserves
+    beyond the current profit pool entered, and does not know your company's actual accounts. Always confirm your
+    figures with a qualified accountant before acting on them.
+  </div>
+
+  <div class="card">
+    <h2>Inputs</h2>
+    <div class="form-grid">
+      <div>
+        <label for="taxYear">Tax year</label>
+        <select id="taxYear">
+          <option value="2026-27">2026/27</option>
+        </select>
+      </div>
+      <div>
+        <label for="jurisdiction">Tax jurisdiction</label>
+        <select id="jurisdiction">
+          <option value="rUK">England / Wales / Northern Ireland</option>
+          <option value="scotland">Scotland</option>
+        </select>
+        <div class="field-note">Dividend tax always uses UK-wide rates and bands, even for Scotland — it's reserved to Westminster.</div>
+      </div>
+      <div>
+        <label for="existingSalary">Director's existing annual salary (£)</label>
+        <input id="existingSalary" type="number" min="0" step="100" value="9100">
+      </div>
+      <div>
+        <label for="otherIncome">Other taxable income (£/yr)</label>
+        <input id="otherIncome" type="number" min="0" step="100" value="0">
+        <div class="field-note">E.g. rental or self-employment profit, taxed alongside salary.</div>
+      </div>
+      <div>
+        <label for="existingDividends">Existing dividends already received (£/yr)</label>
+        <input id="existingDividends" type="number" min="0" step="100" value="0">
+      </div>
+      <div>
+        <label for="pool">Company profit available for extraction (£)</label>
+        <input id="pool" type="number" min="0" step="100" value="80000">
+        <div class="field-note">Pre-tax — the fixed pool this tool splits between salary and dividend.</div>
+      </div>
+      <div>
+        <label for="associatedCompanies">Number of associated companies</label>
+        <input id="associatedCompanies" type="number" min="0" step="1" value="0">
+      </div>
+      <div>
+        <label for="apMonths">Accounting-period length (months)</label>
+        <input id="apMonths" type="number" min="1" max="12" step="1" value="12">
+      </div>
+      <div>
+        <label for="stepSize">Calculation step size (£)</label>
+        <input id="stepSize" type="number" min="1" step="1" value="100">
+      </div>
+      <div class="checkbox-row">
+        <input id="employmentAllowance" type="checkbox" checked>
+        <label for="employmentAllowance">Employment Allowance applies</label>
+      </div>
+    </div>
+    <div class="field-note" style="margin-top:0.9rem;">
+      Employment Allowance is NOT available to a company whose only employee is also its director — check your
+      eligibility at gov.uk before relying on this toggle.
+    </div>
+  </div>
+
+  <div id="warningsCard" class="warnings-card" style="display:none;">
+    <h2>Warnings</h2>
+    <ul id="warningsList"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Net cash received by the director, by additional salary chosen</h2>
+    <div class="chart-legend">
+      <span class="key"><span class="dot" style="background:var(--series-1);"></span> Net receipt</span>
+      <span class="key"><span class="dot" style="background:var(--good);"></span> Optimum</span>
+      <span class="key"><span class="dot" style="background:var(--muted);"></span> All-salary / all-dividend</span>
+      <span class="key"><span class="dot" style="background:var(--accent);"></span> Selected (click a point, or use arrow keys)</span>
+    </div>
+    <div class="chart-wrap" id="chartWrap">
+      <svg class="chart" id="chart" viewBox="0 0 820 420" preserveAspectRatio="xMidYMid meet"
+           role="img" tabindex="0"
+           aria-label="Line chart of total net cash received by the director against additional salary taken. Use left and right arrow keys to move between calculated points."></svg>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+    <div class="sr-only" aria-live="polite" id="chartAnnouncer"></div>
+  </div>
+
+  <div class="card">
+    <h2>Optimum vs all-salary vs all-dividend</h2>
+    <div class="comparison-grid" id="comparisonGrid"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="detailHeading">Detailed calculation — selected point</h2>
+    <table class="detail-table" id="detailTable" aria-labelledby="detailHeading"></table>
+  </div>
+
+  <p class="caveats">
+    <strong>Excluded from this version:</strong> pension contributions, benefits in kind, student loan repayments,
+    IR35/off-payroll working, multiple shareholders or share classes, and prior retained reserves (the pool entered
+    is treated as the entire distributable resource under consideration — it does not add to or draw down any
+    existing reserves in the company's accounts). Corporation Tax marginal relief assumes augmented profits equal
+    basic profits (i.e. the company receives no dividends from other companies). Personal Allowance taper,
+    Corporation Tax limits, and dividend-band thresholds are captured via the calculation step size rather than
+    exact algebraic snapping (only National Insurance and Employment Allowance thresholds are snapped exactly) —
+    reduce the step size for more precision near those boundaries. See the README in this tool's folder for the
+    full model, formulas, and how to add a future tax year.
+  </p>
+</main>
+
+<script src="config.js"></script>
+<script src="calc.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var CFG_ALL = TaxConfig.TAX_YEARS;
+
+  function fmtGBP(n, decimals) {
+    var d = decimals === undefined ? 0 : decimals;
+    var sign = n < 0 ? "-" : "";
+    return sign + "£" + Math.abs(n).toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+
+  // ---------- DOM refs ----------
+
+  var els = {
+    taxYear: document.getElementById("taxYear"),
+    jurisdiction: document.getElementById("jurisdiction"),
+    existingSalary: document.getElementById("existingSalary"),
+    otherIncome: document.getElementById("otherIncome"),
+    existingDividends: document.getElementById("existingDividends"),
+    pool: document.getElementById("pool"),
+    associatedCompanies: document.getElementById("associatedCompanies"),
+    apMonths: document.getElementById("apMonths"),
+    stepSize: document.getElementById("stepSize"),
+    employmentAllowance: document.getElementById("employmentAllowance")
+  };
+
+  var warningsCard = document.getElementById("warningsCard");
+  var warningsList = document.getElementById("warningsList");
+  var svg = document.getElementById("chart");
+  var chartWrap = document.getElementById("chartWrap");
+  var tooltip = document.getElementById("tooltip");
+  var chartAnnouncer = document.getElementById("chartAnnouncer");
+  var comparisonGrid = document.getElementById("comparisonGrid");
+  var detailTable = document.getElementById("detailTable");
+
+  var state = { result: null, selectedIndex: -1 };
+
+  // ---------- Input gathering ----------
+
+  function readInput() {
+    return {
+      pool: Math.max(0, parseFloat(els.pool.value) || 0),
+      existingSalary: Math.max(0, parseFloat(els.existingSalary.value) || 0),
+      otherIncome: Math.max(0, parseFloat(els.otherIncome.value) || 0),
+      existingDividends: Math.max(0, parseFloat(els.existingDividends.value) || 0),
+      jurisdiction: els.jurisdiction.value,
+      associatedCompanies: Math.max(0, Math.round(parseFloat(els.associatedCompanies.value) || 0)),
+      apFractionOfYear: Math.min(12, Math.max(1, parseFloat(els.apMonths.value) || 12)) / 12,
+      employmentAllowanceApplies: els.employmentAllowance.checked,
+      stepSize: Math.max(1, parseFloat(els.stepSize.value) || 100)
+    };
+  }
+
+  // ---------- Rendering ----------
+
+  function render() {
+    var input = readInput();
+    var config = CFG_ALL[els.taxYear.value];
+    var result = TaxCalc.runOptimiser(input, config);
+    state.result = result;
+
+    renderWarnings(result.warnings);
+
+    if (!result.points.length) {
+      svg.innerHTML = "";
+      comparisonGrid.innerHTML = "";
+      detailTable.innerHTML = "";
+      return;
+    }
+
+    var optimumIndex = result.points.indexOf(result.optimum);
+    state.selectedIndex = Math.min(state.selectedIndex, result.points.length - 1);
+    if (state.selectedIndex < 0) state.selectedIndex = optimumIndex;
+
+    renderChart(result, optimumIndex);
+    renderComparison(result);
+    renderDetailTable(result.points[state.selectedIndex]);
+  }
+
+  function renderWarnings(warnings) {
+    if (!warnings.length) {
+      warningsCard.style.display = "none";
+      warningsList.innerHTML = "";
+      return;
+    }
+    warningsCard.style.display = "block";
+    warningsList.innerHTML = warnings.map(function (w) { return "<li>" + escapeHtml(w) + "</li>"; }).join("");
+  }
+
+  // ---------- Chart ----------
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  var W = 820, H = 420;
+  var MARGIN = { top: 20, right: 24, bottom: 40, left: 84 };
+  var plotW = W - MARGIN.left - MARGIN.right;
+  var plotH = H - MARGIN.top - MARGIN.bottom;
+
+  function el(tag, attrs) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  function niceNum(range, round) {
+    if (range === 0) return 1;
+    var exponent = Math.floor(Math.log10(range));
+    var fraction = range / Math.pow(10, exponent);
+    var niceFraction;
+    if (round) {
+      if (fraction < 1.5) niceFraction = 1;
+      else if (fraction < 3) niceFraction = 2;
+      else if (fraction < 7) niceFraction = 5;
+      else niceFraction = 10;
+    } else {
+      if (fraction <= 1) niceFraction = 1;
+      else if (fraction <= 2) niceFraction = 2;
+      else if (fraction <= 5) niceFraction = 5;
+      else niceFraction = 10;
+    }
+    return niceFraction * Math.pow(10, exponent);
+  }
+
+  function niceScale(min, max, maxTicks) {
+    if (max <= min) max = min + 1;
+    var range = niceNum(max - min, false);
+    var step = niceNum(range / (maxTicks - 1), true);
+    var niceMin = Math.floor(min / step) * step;
+    var niceMax = Math.ceil(max / step) * step;
+    var ticks = [];
+    for (var v = niceMin; v <= niceMax + step / 2; v += step) ticks.push(Math.round(v * 100) / 100);
+    return { min: niceMin, max: niceMax, ticks: ticks };
+  }
+
+  var chartScales = null;
+  var chartPoints = null;
+
+  function renderChart(result, optimumIndex) {
+    var points = result.points;
+    chartPoints = points;
+
+    var xMin = points[0].additionalSalary;
+    var xMax = points[points.length - 1].additionalSalary;
+    var yMin = Math.min.apply(null, points.map(function (p) { return p.netReceipt; }));
+    var yMax = Math.max.apply(null, points.map(function (p) { return p.netReceipt; }));
+    var yPad = (yMax - yMin) * 0.08 || 100;
+
+    var yScale = niceScale(yMin - yPad, yMax + yPad, 6);
+
+    var xScale = function (v) { return MARGIN.left + ((v - xMin) / (xMax - xMin || 1)) * plotW; };
+    var yScaleFn = function (v) { return MARGIN.top + plotH - ((v - yScale.min) / (yScale.max - yScale.min)) * plotH; };
+
+    chartScales = { xScale: xScale, yScale: yScaleFn, xMin: xMin, xMax: xMax };
+
+    svg.innerHTML = "";
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+
+    yScale.ticks.forEach(function (t) {
+      if (t < yScale.min || t > yScale.max) return;
+      var y = yScaleFn(t);
+      svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: y, y2: y, class: "gridline" }));
+      var label = el("text", { x: MARGIN.left - 10, y: y + 4, class: "tick-label", "text-anchor": "end" });
+      label.textContent = fmtGBP(t);
+      svg.appendChild(label);
+    });
+
+    var xTickCount = 6;
+    for (var i = 0; i < xTickCount; i++) {
+      var v = xMin + ((xMax - xMin) * i) / (xTickCount - 1);
+      var x = xScale(v);
+      var label2 = el("text", {
+        x: x, y: MARGIN.top + plotH + 22, class: "tick-label",
+        "text-anchor": i === 0 ? "start" : (i === xTickCount - 1 ? "end" : "middle")
+      });
+      label2.textContent = fmtGBP(v);
+      svg.appendChild(label2);
+    }
+
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "axis-line" }));
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: MARGIN.top + plotH, y2: MARGIN.top + plotH, class: "axis-line" }));
+
+    var yTitle = el("text", { x: -(MARGIN.top + plotH / 2), y: 16, class: "axis-title", "text-anchor": "middle", transform: "rotate(-90)" });
+    yTitle.textContent = "Total net cash to director (£/yr)";
+    svg.appendChild(yTitle);
+    var xTitle = el("text", { x: MARGIN.left + plotW / 2, y: H - 4, class: "axis-title", "text-anchor": "middle" });
+    xTitle.textContent = "Additional salary/bonus (£/yr)";
+    svg.appendChild(xTitle);
+
+    var path = points.map(function (p, i) {
+      return (i === 0 ? "M" : "L") + xScale(p.additionalSalary).toFixed(2) + "," + yScaleFn(p.netReceipt).toFixed(2);
+    }).join(" ");
+    svg.appendChild(el("path", { d: path, class: "series-line" }));
+
+    // endpoints (all-dividend, all-salary)
+    [0, points.length - 1].forEach(function (idx) {
+      var p = points[idx];
+      svg.appendChild(el("circle", { cx: xScale(p.additionalSalary), cy: yScaleFn(p.netReceipt), r: 5, class: "pt-endpoint" }));
+    });
+
+    // optimum
+    var optP = points[optimumIndex];
+    svg.appendChild(el("circle", {
+      cx: xScale(optP.additionalSalary), cy: yScaleFn(optP.netReceipt), r: 6.5, class: "pt-optimum", id: "optimumDot"
+    }));
+
+    // selected marker (updated separately)
+    var selCircle = el("circle", { r: 6, class: "pt-selected", id: "selectedDot", visibility: "hidden" });
+    svg.appendChild(selCircle);
+
+    var crosshair = el("line", {
+      x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH,
+      class: "crosshair", visibility: "hidden", id: "crosshairLine"
+    });
+    svg.appendChild(crosshair);
+
+    var hitRect = el("rect", { x: MARGIN.left, y: MARGIN.top, width: plotW, height: plotH, fill: "transparent" });
+    svg.appendChild(hitRect);
+
+    hitRect.addEventListener("pointermove", onHoverMove);
+    hitRect.addEventListener("pointerleave", onHoverLeave);
+    hitRect.addEventListener("click", function (evt) { selectFromClientX(evt.clientX); });
+
+    updateSelectedMarker();
+  }
+
+  function nearestIndexForClientX(clientX) {
+    var rect = svg.getBoundingClientRect();
+    var scaleX = W / rect.width;
+    var xInViewBox = (clientX - rect.left) * scaleX;
+    var frac = Math.min(1, Math.max(0, (xInViewBox - MARGIN.left) / plotW));
+    var targetSalary = chartScales.xMin + frac * (chartScales.xMax - chartScales.xMin);
+    var bestIdx = 0, bestDist = Infinity;
+    for (var i = 0; i < chartPoints.length; i++) {
+      var d = Math.abs(chartPoints[i].additionalSalary - targetSalary);
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+    return bestIdx;
+  }
+
+  function onHoverMove(evt) {
+    var idx = nearestIndexForClientX(evt.clientX);
+    showTooltipFor(idx, evt.clientX);
+  }
+
+  function onHoverLeave() {
+    tooltip.classList.remove("show");
+    var crosshair = document.getElementById("crosshairLine");
+    if (crosshair) crosshair.setAttribute("visibility", "hidden");
+  }
+
+  function selectFromClientX(clientX) {
+    state.selectedIndex = nearestIndexForClientX(clientX);
+    updateSelectedMarker();
+    renderDetailTable(chartPoints[state.selectedIndex]);
+    announceSelected();
+  }
+
+  function showTooltipFor(idx, clientX) {
+    var p = chartPoints[idx];
+    var x = chartScales.xScale(p.additionalSalary);
+    var crosshair = document.getElementById("crosshairLine");
+    crosshair.setAttribute("x1", x);
+    crosshair.setAttribute("x2", x);
+    crosshair.setAttribute("visibility", "visible");
+
+    var rect = svg.getBoundingClientRect();
+    var scaleFactor = rect.width / W;
+    var wrapRect = chartWrap.getBoundingClientRect();
+    var tipX = (x * scaleFactor) + (rect.left - wrapRect.left);
+
+    tooltip.innerHTML = "";
+    var head = document.createElement("div");
+    head.className = "t-head";
+    head.textContent = "Additional salary: " + fmtGBP(p.additionalSalary);
+    tooltip.appendChild(head);
+
+    var rows = [
+      ["Total salary", fmtGBP(p.totalSalary)],
+      ["New dividend", fmtGBP(p.newDividend)],
+      ["Employer NIC (marginal)", fmtGBP(p.marginalEmployerNI)],
+      ["Employee NIC", fmtGBP(p.employeeNI)],
+      ["PAYE income tax", fmtGBP(p.incomeTax)],
+      ["Corporation Tax", fmtGBP(p.corporationTax)],
+      ["Dividend tax", fmtGBP(p.dividendTax)],
+      ["Total company cost", fmtGBP(p.totalCompanyCost)],
+      ["Net receipt", fmtGBP(p.netReceipt)]
+    ];
+    rows.forEach(function (r) {
+      var row = document.createElement("div");
+      row.className = "t-row";
+      var k = document.createElement("span");
+      k.textContent = r[0];
+      var v = document.createElement("span");
+      v.className = "v";
+      v.textContent = r[1];
+      row.appendChild(k);
+      row.appendChild(v);
+      tooltip.appendChild(row);
+    });
+
+    var left = Math.min(Math.max(tipX + 12, 0), chartWrap.clientWidth - 220);
+    tooltip.style.left = left + "px";
+    tooltip.style.top = "10px";
+    tooltip.classList.add("show");
+  }
+
+  function updateSelectedMarker() {
+    var dot = document.getElementById("selectedDot");
+    if (!dot || !chartPoints || !chartScales) return;
+    var p = chartPoints[state.selectedIndex];
+    dot.setAttribute("cx", chartScales.xScale(p.additionalSalary));
+    dot.setAttribute("cy", chartScales.yScale(p.netReceipt));
+    dot.setAttribute("visibility", "visible");
+  }
+
+  function announceSelected() {
+    var p = chartPoints[state.selectedIndex];
+    chartAnnouncer.textContent = "Selected additional salary " + fmtGBP(p.additionalSalary) +
+      ", net receipt " + fmtGBP(p.netReceipt) + ".";
+  }
+
+  svg.addEventListener("keydown", function (evt) {
+    if (!chartPoints || !chartPoints.length) return;
+    var handled = true;
+    if (evt.key === "ArrowRight") {
+      state.selectedIndex = Math.min(chartPoints.length - 1, state.selectedIndex + 1);
+    } else if (evt.key === "ArrowLeft") {
+      state.selectedIndex = Math.max(0, state.selectedIndex - 1);
+    } else if (evt.key === "Home") {
+      state.selectedIndex = 0;
+    } else if (evt.key === "End") {
+      state.selectedIndex = chartPoints.length - 1;
+    } else {
+      handled = false;
+    }
+    if (handled) {
+      evt.preventDefault();
+      updateSelectedMarker();
+      renderDetailTable(chartPoints[state.selectedIndex]);
+      announceSelected();
+    }
+  });
+
+  // ---------- Comparison ----------
+
+  function renderComparison(result) {
+    var optIdx = result.points.indexOf(result.optimum);
+    var tiles = [
+      { label: "All-dividend (£0 additional salary)", point: result.allDividend },
+      { label: "Optimum", point: result.optimum, isBest: true },
+      { label: "All-salary (max feasible)", point: result.allSalary }
+    ];
+    comparisonGrid.innerHTML = "";
+    tiles.forEach(function (t) {
+      var tile = document.createElement("div");
+      tile.className = "compare-tile" + (t.isBest ? " is-best" : "");
+      var labelRow = t.isBest
+        ? '<span>' + t.label + '</span><span class="badge">BEST</span>'
+        : t.label;
+      tile.innerHTML =
+        '<div class="label">' + labelRow + '</div>' +
+        '<div class="value">' + fmtGBP(t.point.netReceipt) + '</div>' +
+        '<div class="sub">Salary ' + fmtGBP(t.point.additionalSalary) + ' &middot; Dividend ' + fmtGBP(t.point.newDividend) + '</div>';
+      tile.addEventListener("click", function () {
+        state.selectedIndex = result.points.indexOf(t.point);
+        updateSelectedMarker();
+        renderDetailTable(t.point);
+        announceSelected();
+      });
+      tile.style.cursor = "pointer";
+      comparisonGrid.appendChild(tile);
+    });
+  }
+
+  // ---------- Detail table ----------
+
+  function renderDetailTable(p) {
+    var rows = [
+      ["Additional salary/bonus", fmtGBP(p.additionalSalary)],
+      ["Total salary (existing + additional)", fmtGBP(p.totalSalary)],
+      ["Employer NIC (marginal cost of this split)", fmtGBP(p.marginalEmployerNI)],
+      ["Corporation Tax taxable profit", fmtGBP(p.ctTaxableProfit)],
+      ["Corporation Tax (" + p.ctRegime + " rate regime)", fmtGBP(p.corporationTax)],
+      ["New dividend from this split", fmtGBP(p.newDividend)],
+      ["Total dividends (existing + new)", fmtGBP(p.totalDividends)],
+      ["Employee NIC", fmtGBP(p.employeeNI)],
+      ["PAYE income tax", fmtGBP(p.incomeTax)],
+      ["Dividend tax", fmtGBP(p.dividendTax)],
+      ["Tapered Personal Allowance used in this calculation", fmtGBP(p.taperedPersonalAllowance)],
+      ["Total company cost (salary + employer NIC + CT + dividend)", fmtGBP(p.totalCompanyCost)]
+    ];
+    var html = rows.map(function (r) {
+      return "<tr><td class=\"k\">" + r[0] + "</td><td class=\"v\">" + r[1] + "</td></tr>";
+    }).join("");
+    html += "<tr class=\"total\"><td class=\"k\">Net cash received by the director</td><td class=\"v\">" + fmtGBP(p.netReceipt) + "</td></tr>";
+    detailTable.innerHTML = html;
+  }
+
+  // ---------- Helpers ----------
+
+  function escapeHtml(s) {
+    var div = document.createElement("div");
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // ---------- Wire up + init ----------
+
+  Object.keys(els).forEach(function (key) {
+    var eventName = els[key].type === "checkbox" || els[key].tagName === "SELECT" ? "change" : "input";
+    els[key].addEventListener(eventName, function () {
+      state.selectedIndex = -1; // sentinel: render() will reassign to the new optimum
+      render();
+    });
+  });
+
+  var ro = new ResizeObserver(function () {
+    onHoverLeave();
+  });
+  ro.observe(chartWrap);
+
+  render();
+})();
+</script>
+</body>
+</html>
