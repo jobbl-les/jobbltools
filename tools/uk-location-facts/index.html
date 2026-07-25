@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UK Location Facts — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+    --bad: #dc2626;
+    --good: #16a34a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+      --bad: #f87171;
+      --good: #4ade80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main {
+    width: 100%;
+    max-width: 700px;
+  }
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin: 0.75rem 0 0.3rem;
+  }
+  p.sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card h3 {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0.9rem 0 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--fg);
+  }
+  .input-row {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .input-row input { flex: 1 1 220px; }
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.88rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn.ghost {
+    background: var(--surface);
+    color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  .btn:disabled { opacity: 0.6; cursor: default; }
+
+  .err-box {
+    font-size: 0.85rem;
+    color: var(--bad);
+    margin-top: 0.7rem;
+    display: none;
+  }
+  .status-line {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.7rem;
+  }
+
+  .disambig-list { margin-top: 0.75rem; display: none; }
+  .disambig-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    color: var(--fg);
+    font-size: 0.88rem;
+  }
+  .disambig-item:hover { border-color: var(--accent); }
+  .disambig-item .place-sub { color: var(--muted); font-size: 0.78rem; }
+
+  .kv {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .kv:last-child { border-bottom: none; }
+  .kv .k { color: var(--muted); }
+  .kv .v { color: var(--fg); text-align: right; }
+
+  .party-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+  }
+
+  .priority {
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .priority:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .priority p { margin: 0.2rem 0; color: var(--muted); }
+  .priority strong { color: var(--fg); }
+
+  table.crime-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem; }
+  table.crime-table td { padding: 0.3rem 0; border-bottom: 1px solid var(--border); }
+  table.crime-table td.count { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  table.crime-table tr:last-child td { border-bottom: none; }
+
+  ul.plain { list-style: none; margin: 0; padding: 0; }
+  ul.plain li {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  ul.plain li:last-child { border-bottom: none; }
+  ul.plain a { color: var(--accent); }
+  .muted-small { color: var(--muted); font-size: 0.78rem; }
+
+  .section-empty { color: var(--muted); font-size: 0.85rem; }
+
+  .caveats { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+  .caveats a { color: var(--muted); }
+
+  #results { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>UK Location Facts</h1>
+  <p class="sub">Enter a UK postcode, town, or use your location — see what UK government open data says about that place.</p>
+
+  <div class="card">
+    <div class="input-row">
+      <input id="queryInput" type="text" placeholder="e.g. SW1A 1AA or Bourton-on-the-Water" autocomplete="off">
+      <button class="btn" id="searchBtn" type="button">Search</button>
+      <button class="btn ghost" id="geoBtn" type="button">Use my location</button>
+    </div>
+    <div class="status-line" id="statusLine"></div>
+    <div class="err-box" id="errBox"></div>
+    <div class="disambig-list" id="disambigList"></div>
+  </div>
+
+  <div id="results">
+    <div class="card" id="locationCard"></div>
+    <div class="card" id="policeCard"></div>
+    <div class="card" id="environmentCard"></div>
+    <div class="card" id="civicCard"></div>
+    <div class="card" id="openDataCard"></div>
+  </div>
+
+  <p class="caveats">
+    Location resolved via <a href="https://postcodes.io" target="_blank" rel="noopener">postcodes.io</a>. Crime and
+    neighbourhood policing data from <a href="https://data.police.uk" target="_blank" rel="noopener">data.police.uk</a>
+    (Home Office). MP lookup from the <a href="https://members-api.parliament.uk" target="_blank" rel="noopener">UK
+    Parliament API</a>. Flood data from the <a href="https://environment.data.gov.uk/flood-monitoring/doc/reference" target="_blank" rel="noopener">Environment
+    Agency</a>. Bank holidays from <a href="https://www.gov.uk/bank-holidays" target="_blank" rel="noopener">GOV.UK</a>.
+    Related datasets from the <a href="https://www.data.gov.uk" target="_blank" rel="noopener">data.gov.uk</a> CKAN
+    catalogue. All are free, key-free UK government (or government-run open data) sources — everything here is looked
+    up live and nothing you search is stored. Crime figures lag by a month or two, as noted against each figure.
+  </p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  const POSTCODE_REGEX = /^[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2}$/;
+
+  const queryInput = document.getElementById("queryInput");
+  const searchBtn = document.getElementById("searchBtn");
+  const geoBtn = document.getElementById("geoBtn");
+  const statusLine = document.getElementById("statusLine");
+  const errBox = document.getElementById("errBox");
+  const disambigList = document.getElementById("disambigList");
+  const resultsEl = document.getElementById("results");
+  const locationCard = document.getElementById("locationCard");
+  const policeCard = document.getElementById("policeCard");
+  const environmentCard = document.getElementById("environmentCard");
+  const civicCard = document.getElementById("civicCard");
+  const openDataCard = document.getElementById("openDataCard");
+
+  function setStatus(msg) { statusLine.textContent = msg || ""; }
+  function setError(msg) {
+    errBox.textContent = msg || "";
+    errBox.style.display = msg ? "block" : "none";
+  }
+
+  // Several of these APIs (data.police.uk's crime endpoint especially, which
+  // can return a multi-MB payload) intermittently fail at the network level
+  // under the concurrent fan-out this page does — one quiet retry before
+  // giving up on a source. Deliberately NOT treating non-2xx as failure here:
+  // postcodes.io returns a meaningful, parseable body on a 404 ("not found"),
+  // so that has to reach the caller's own .then(), not get swallowed as a
+  // retry-then-throw.
+  function fetchJson(url, retries) {
+    if (retries === undefined) retries = 1;
+    return fetch(url)
+      .then(r => r.json())
+      .catch(err => {
+        if (retries > 0) return fetchJson(url, retries - 1);
+        throw err;
+      });
+  }
+
+  function haversineKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function titleCase(kebab) {
+    return kebab.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  }
+
+  function fmtDate(iso) {
+    const d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  function fmtMonth(yyyyMm) {
+    const d = new Date(yyyyMm + "-01T00:00:00");
+    return d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  }
+
+  // ---------- Step 1: resolve input to a location ----------
+
+  function resolveLocation(raw) {
+    const trimmed = raw.trim();
+    const compact = trimmed.replace(/\s+/g, "").toUpperCase();
+
+    if (POSTCODE_REGEX.test(compact)) {
+      return fetchJson("https://api.postcodes.io/postcodes/" + encodeURIComponent(trimmed))
+        .then(data => {
+          if (data.status !== 200 || !data.result) throw new Error("That postcode wasn't found.");
+          return locationFromPostcodeResult(data.result, data.result.postcode);
+        });
+    }
+
+    return fetchJson("https://api.postcodes.io/places?q=" + encodeURIComponent(trimmed))
+      .then(data => {
+        const places = data.result || [];
+        if (!places.length) throw new Error("Couldn't find a postcode or place matching \"" + trimmed + "\".");
+        if (places.length === 1) return locationFromPlace(places[0]);
+        return { needsDisambiguation: true, places };
+      });
+  }
+
+  function locationFromPlace(place) {
+    const displayName = place.name_2 ? place.name_1 + " (" + place.name_2 + ")" : place.name_1;
+    return fetchJson("https://api.postcodes.io/postcodes?lon=" + place.longitude + "&lat=" + place.latitude + "&limit=1")
+      .then(data => {
+        const nearest = (data.result || [])[0];
+        if (!nearest) {
+          // Fall back to the place's own (thinner) data if no postcode is nearby
+          return {
+            displayName: displayName,
+            lat: place.latitude,
+            lng: place.longitude,
+            region: place.region,
+            country: place.country,
+            admin_district: place.district_borough || place.county_unitary,
+            admin_ward: null,
+            parliamentary_constituency: null,
+            postcode: null
+          };
+        }
+        return locationFromPostcodeResult(nearest, displayName);
+      });
+  }
+
+  function locationFromPostcodeResult(result, displayName) {
+    return {
+      displayName: displayName,
+      lat: result.latitude,
+      lng: result.longitude,
+      region: result.region,
+      country: result.country,
+      admin_district: result.admin_district,
+      admin_ward: result.admin_ward,
+      parliamentary_constituency: result.parliamentary_constituency,
+      postcode: result.postcode
+    };
+  }
+
+  // ---------- Step 2: render location + fan out to all data sources ----------
+
+  function runSearch(raw) {
+    setError("");
+    disambigList.style.display = "none";
+    resultsEl.style.display = "none";
+    setStatus("Looking up “" + raw + "”…");
+    searchBtn.disabled = true;
+
+    resolveLocation(raw)
+      .then(location => {
+        if (location.needsDisambiguation) {
+          setStatus("Multiple places match — pick one:");
+          renderDisambiguation(location.places);
+          return;
+        }
+        setStatus("");
+        showLocation(location);
+      })
+      .catch(err => {
+        setStatus("");
+        setError(err.message || "Something went wrong looking that up.");
+      })
+      .finally(() => { searchBtn.disabled = false; });
+  }
+
+  function renderDisambiguation(places) {
+    disambigList.innerHTML = "";
+    disambigList.style.display = "block";
+    places.forEach(place => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "disambig-item";
+      const displayName = place.name_2 ? place.name_1 + " (" + place.name_2 + ")" : place.name_1;
+      const sub = [place.local_type, place.county_unitary, place.region].filter(Boolean).join(" · ");
+      btn.innerHTML = "<div>" + displayName + "</div><div class=\"place-sub\">" + sub + "</div>";
+      btn.addEventListener("click", () => {
+        setStatus("Looking up " + displayName + "…");
+        disambigList.style.display = "none";
+        locationFromPlace(place).then(showLocation).catch(err => {
+          setStatus("");
+          setError(err.message || "Something went wrong looking that up.");
+        });
+      });
+      disambigList.appendChild(btn);
+    });
+  }
+
+  function kvRow(label, valueHtml) {
+    return '<div class="kv"><span class="k">' + label + '</span><span class="v">' + valueHtml + "</span></div>";
+  }
+
+  function showLocation(location) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("q", location.displayName);
+    history.replaceState(null, "", url.pathname + url.search);
+
+    resultsEl.style.display = "block";
+    renderLocationCard(location);
+    renderPoliceCard(location);
+    renderEnvironmentCard(location);
+    renderCivicCard(location);
+    renderOpenDataCard(location);
+  }
+
+  // ---------- Location summary ----------
+
+  function renderLocationCard(loc) {
+    let html = "<h2>" + escapeHtml(loc.displayName) + "</h2>";
+    html += kvRow("Region", loc.region || "&mdash;");
+    html += kvRow("Country", loc.country || "&mdash;");
+    html += kvRow("Local authority", loc.admin_district || "&mdash;");
+    html += kvRow("Ward", loc.admin_ward || "&mdash;");
+    html += kvRow("Coordinates", loc.lat.toFixed(5) + ", " + loc.lng.toFixed(5));
+    html += '<div id="mpRow"></div>';
+    locationCard.innerHTML = html;
+
+    if (loc.parliamentary_constituency) {
+      fetchMp(loc.parliamentary_constituency);
+    }
+  }
+
+  function fetchMp(constituencyName) {
+    fetchJson("https://members-api.parliament.uk/api/Location/Constituency/Search?searchText=" + encodeURIComponent(constituencyName) + "&take=1")
+      .then(data => {
+        const item = (data.items || [])[0];
+        const rep = item && item.value && item.value.currentRepresentation;
+        const mp = rep && rep.member && rep.member.value;
+        const mpRow = document.getElementById("mpRow");
+        if (!mpRow) return;
+        if (mp) {
+          const party = mp.latestParty || {};
+          const dot = party.backgroundColour ? '<span class="party-dot" style="background:#' + party.backgroundColour + ';"></span>' : "";
+          mpRow.innerHTML =
+            kvRow("Constituency", escapeHtml(constituencyName)) +
+            kvRow("MP", dot + escapeHtml(mp.nameDisplayAs) + " (" + escapeHtml(party.name || "") + ")");
+        } else {
+          mpRow.innerHTML = kvRow("Constituency", escapeHtml(constituencyName));
+        }
+      })
+      .catch(() => {
+        const mpRow = document.getElementById("mpRow");
+        if (mpRow) mpRow.innerHTML = kvRow("Constituency", escapeHtml(constituencyName));
+      });
+  }
+
+  // ---------- Policing & crime ----------
+
+  function renderPoliceCard(loc) {
+    policeCard.innerHTML = "<h2>&#128737; Policing &amp; crime</h2><div class=\"section-empty\">Loading…</div>";
+
+    fetch("https://data.police.uk/api/locate-neighbourhood?q=" + loc.lat + "," + loc.lng)
+      .then(r => { if (!r.ok) throw new Error("not covered"); return r.json(); })
+      .then(loc2 => {
+        const force = loc2.force;
+        const neighbourhood = loc2.neighbourhood;
+
+        const forceP = fetchJson("https://data.police.uk/api/forces/" + force).catch(() => null);
+        const nbP = fetchJson("https://data.police.uk/api/" + force + "/" + neighbourhood).catch(() => null);
+        const prioritiesP = fetchJson("https://data.police.uk/api/" + force + "/" + neighbourhood + "/priorities").catch(() => []);
+        const crimeP = fetchJson("https://data.police.uk/api/crimes-street-dates")
+          .then(dates => {
+            const latest = dates[0] && dates[0].date;
+            if (!latest) return { date: null, crimes: [], failed: false };
+            return fetchJson("https://data.police.uk/api/crimes-street/all-crime?lat=" + loc.lat + "&lng=" + loc.lng + "&date=" + latest, 2)
+              .then(crimes => ({ date: latest, crimes: crimes, failed: false }));
+          })
+          .catch(() => ({ date: null, crimes: [], failed: true }));
+
+        return Promise.all([forceP, nbP, prioritiesP, crimeP]).then(([forceInfo, nbInfo, priorities, crimeData]) => {
+          renderPoliceContent(loc, forceInfo, nbInfo, priorities, crimeData);
+        });
+      })
+      .catch(() => {
+        policeCard.innerHTML = "<h2>&#128737; Policing &amp; crime</h2><div class=\"section-empty\">Not available for this location.</div>";
+      });
+  }
+
+  function renderPoliceContent(loc, forceInfo, nbInfo, priorities, crimeData) {
+    let html = "<h2>&#128737; Policing &amp; crime</h2>";
+
+    if (forceInfo) {
+      html += kvRow("Police force", escapeHtml(forceInfo.name));
+      if (forceInfo.url) html += kvRow("Force website", '<a href="' + forceInfo.url + '" target="_blank" rel="noopener">' + forceInfo.url.replace(/^https?:\/\//, "") + "</a>");
+      if (forceInfo.telephone) html += kvRow("Non-emergency number", forceInfo.telephone);
+    }
+
+    if (nbInfo) {
+      html += "<h3>Local neighbourhood team</h3>";
+      html += kvRow("Team", escapeHtml(nbInfo.name || "&mdash;"));
+      if (nbInfo.contact_details && nbInfo.contact_details.email) {
+        html += kvRow("Contact", '<a href="mailto:' + nbInfo.contact_details.email + '">' + nbInfo.contact_details.email + "</a>");
+      }
+      if (nbInfo.url_force) {
+        html += kvRow("Team page", '<a href="' + nbInfo.url_force + '" target="_blank" rel="noopener">visit &rarr;</a>');
+      }
+    }
+
+    if (priorities && priorities.length) {
+      html += "<h3>Neighbourhood priorities</h3>";
+      priorities.slice(0, 3).forEach(p => {
+        const issueText = stripTags(p.issue).slice(0, 220);
+        html += '<div class="priority"><strong>Issue:</strong><p>' + escapeHtml(issueText) + (stripTags(p.issue).length > 220 ? "…" : "") + "</p></div>";
+      });
+    }
+
+    if (crimeData && crimeData.crimes && crimeData.crimes.length) {
+      const counts = {};
+      crimeData.crimes.forEach(c => { counts[c.category] = (counts[c.category] || 0) + 1; });
+      const sorted = Object.keys(counts).map(k => ({ category: k, count: counts[k] })).sort((a, b) => b.count - a.count);
+      html += "<h3>Crimes recorded — " + fmtMonth(crimeData.date) + "</h3>";
+      html += kvRow("Total", String(crimeData.crimes.length));
+      html += '<table class="crime-table">';
+      sorted.forEach(row => {
+        html += "<tr><td>" + escapeHtml(titleCase(row.category)) + '</td><td class="count">' + row.count + "</td></tr>";
+      });
+      html += "</table>";
+      html += '<p class="muted-small">Crimes are shown near this location’s coordinates, snapped to a nearby point for anonymity — figures are approximate, not exact-address counts.</p>';
+    } else if (crimeData && crimeData.failed) {
+      html += '<h3>Crimes recorded</h3><div class="section-empty">Couldn\'t load crime data (the crime dataset is large and this occasionally times out). <button class="btn ghost" id="retryCrimeBtn" type="button" style="margin-left:0.5rem; padding:0.3rem 0.7rem; font-size:0.8rem;">Retry</button></div>';
+    } else if (crimeData) {
+      html += "<h3>Crimes recorded</h3><div class=\"section-empty\">No crime data available for this location.</div>";
+    }
+
+    if (!forceInfo && !nbInfo) {
+      html += '<div class="section-empty">Not available for this location.</div>';
+    }
+
+    policeCard.innerHTML = html;
+
+    const retryBtn = document.getElementById("retryCrimeBtn");
+    if (retryBtn) retryBtn.addEventListener("click", () => renderPoliceCard(loc));
+  }
+
+  // ---------- Environment ----------
+
+  function renderEnvironmentCard(loc) {
+    environmentCard.innerHTML = "<h2>&#127786; Environment</h2><div class=\"section-empty\">Loading…</div>";
+
+    const floodsP = fetchJson("https://environment.data.gov.uk/flood-monitoring/id/floods?lat=" + loc.lat + "&long=" + loc.lng + "&dist=20")
+      .catch(() => ({ items: [] }));
+    const stationsP = fetchJson("https://environment.data.gov.uk/flood-monitoring/id/stations?lat=" + loc.lat + "&long=" + loc.lng + "&dist=15")
+      .catch(() => ({ items: [] }));
+
+    Promise.all([floodsP, stationsP]).then(([floods, stations]) => {
+      let html = "<h2>&#127786; Environment</h2>";
+
+      const activeFloods = floods.items || [];
+      html += "<h3>Flood warnings</h3>";
+      if (activeFloods.length) {
+        html += '<ul class="plain">';
+        activeFloods.slice(0, 6).forEach(f => {
+          html += "<li><strong>" + escapeHtml(f.severityLevel <= 2 ? "Warning" : "Alert") + ":</strong> " + escapeHtml(f.description || f.eaAreaName || "Flood alert") + "</li>";
+        });
+        html += "</ul>";
+      } else {
+        html += '<div class="section-empty">No active flood warnings within 20km, as of now.</div>';
+      }
+
+      const items = (stations.items || []).filter(s => s.lat && s.long);
+      items.forEach(s => { s._dist = haversineKm(loc.lat, loc.lng, s.lat, s.long); });
+      items.sort((a, b) => a._dist - b._dist);
+
+      html += "<h3>Nearby river &amp; sea level monitoring stations</h3>";
+      if (items.length) {
+        html += '<ul class="plain">';
+        items.slice(0, 5).forEach(s => {
+          const river = s.riverName ? " (" + s.riverName + ")" : "";
+          html += "<li>" + escapeHtml(s.label || "Station") + escapeHtml(river) + " — " + s._dist.toFixed(1) + " km away</li>";
+        });
+        html += "</ul>";
+        if (items.length > 5) html += '<p class="muted-small">' + (items.length - 5) + " more within 15km.</p>";
+      } else {
+        html += '<div class="section-empty">No monitoring stations found within 15km.</div>';
+      }
+
+      environmentCard.innerHTML = html;
+    });
+  }
+
+  // ---------- Civic (bank holidays) ----------
+
+  function renderCivicCard(loc) {
+    civicCard.innerHTML = "<h2>&#127963; Civic</h2><div class=\"section-empty\">Loading…</div>";
+
+    const divisionMap = {
+      England: "england-and-wales",
+      Wales: "england-and-wales",
+      Scotland: "scotland",
+      "Northern Ireland": "northern-ireland"
+    };
+    const division = divisionMap[loc.country] || "england-and-wales";
+
+    fetchJson("https://www.gov.uk/bank-holidays.json")
+      .then(data => {
+        const events = (data[division] && data[division].events) || [];
+        const today = new Date().toISOString().slice(0, 10);
+        const next = events.find(e => e.date >= today);
+        let html = "<h2>&#127963; Civic</h2>";
+        if (next) {
+          html += kvRow("Next bank holiday", escapeHtml(next.title) + " — " + fmtDate(next.date));
+        } else {
+          html += '<div class="section-empty">No upcoming bank holidays found.</div>';
+        }
+        html += '<p class="muted-small">Bank holidays for ' + (division === "england-and-wales" ? "England &amp; Wales" : titleCase(division)) + ".</p>";
+        civicCard.innerHTML = html;
+      })
+      .catch(() => {
+        civicCard.innerHTML = "<h2>&#127963; Civic</h2><div class=\"section-empty\">Not available.</div>";
+      });
+  }
+
+  // ---------- Open data (CKAN) ----------
+
+  function renderOpenDataCard(loc) {
+    openDataCard.innerHTML = "<h2>&#128202; Related open datasets</h2><div class=\"section-empty\">Loading…</div>";
+    const q = loc.admin_district || loc.region || loc.displayName;
+
+    fetchJson("https://ckan.publishing.service.gov.uk/api/3/action/package_search?q=" + encodeURIComponent(q) + "&rows=6")
+      .then(data => {
+        const results = (data.result && data.result.results) || [];
+        let html = "<h2>&#128202; Related open datasets</h2>";
+        if (results.length) {
+          html += '<p class="muted-small">From data.gov.uk, matching &ldquo;' + escapeHtml(q) + '&rdquo;:</p>';
+          html += '<ul class="plain">';
+          results.forEach(d => {
+            html += '<li><a href="https://www.data.gov.uk/dataset/' + encodeURIComponent(d.name) + '" target="_blank" rel="noopener">' + escapeHtml(d.title) + "</a></li>";
+          });
+          html += "</ul>";
+        } else {
+          html += '<div class="section-empty">No matching datasets found.</div>';
+        }
+        openDataCard.innerHTML = html;
+      })
+      .catch(() => {
+        openDataCard.innerHTML = "<h2>&#128202; Related open datasets</h2><div class=\"section-empty\">Not available.</div>";
+      });
+  }
+
+  // ---------- Helpers ----------
+
+  function escapeHtml(s) {
+    const div = document.createElement("div");
+    div.textContent = String(s == null ? "" : s);
+    return div.innerHTML;
+  }
+
+  function stripTags(html) {
+    const div = document.createElement("div");
+    div.innerHTML = html || "";
+    return div.textContent || "";
+  }
+
+  // ---------- Events ----------
+
+  searchBtn.addEventListener("click", () => {
+    if (queryInput.value.trim()) runSearch(queryInput.value);
+  });
+  queryInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && queryInput.value.trim()) runSearch(queryInput.value);
+  });
+
+  geoBtn.addEventListener("click", () => {
+    if (!("geolocation" in navigator)) {
+      setError("Your browser doesn't support geolocation.");
+      return;
+    }
+    setError("");
+    setStatus("Requesting permission…");
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setStatus("Resolving your location…");
+        fetchJson("https://api.postcodes.io/postcodes?lon=" + pos.coords.longitude + "&lat=" + pos.coords.latitude + "&limit=1")
+          .then(data => {
+            const nearest = (data.result || [])[0];
+            if (!nearest) throw new Error("Couldn't resolve your location to a UK area.");
+            setStatus("");
+            queryInput.value = nearest.postcode;
+            showLocation(locationFromPostcodeResult(nearest, nearest.postcode));
+          })
+          .catch(err => {
+            setStatus("");
+            setError(err.message || "Couldn't resolve your location.");
+          });
+      },
+      err => {
+        const messages = { 1: "Permission denied", 2: "Position unavailable", 3: "Timed out" };
+        setStatus("");
+        setError(messages[err.code] || "Couldn't get your location.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  });
+
+  // ---------- Init ----------
+
+  const initialQuery = new URLSearchParams(window.location.search).get("q");
+  if (initialQuery) {
+    queryInput.value = initialQuery;
+    runSearch(initialQuery);
+  }
+})();
+</script>
+</body>
+</html>
