@@ -524,7 +524,9 @@
           const n = parseFloat(v);
           tier.uses = Number.isFinite(n) ? n : NaN;
         }
-        persistAndRender();
+        saveStore();
+        updateComputedColumns();
+        render();
       });
       usesTd.appendChild(usesInput);
       if (!isLast && (tier.uses == null || !(tier.uses > 0))) {
@@ -545,7 +547,9 @@
       rateInput.addEventListener("input", () => {
         const n = parseFloat(rateInput.value);
         tier.rate = Number.isFinite(n) ? n : NaN;
-        persistAndRender();
+        saveStore();
+        updateComputedColumns();
+        render();
       });
       rateTd.appendChild(rateInput);
       if (!(tier.rate >= 0)) {
@@ -577,6 +581,45 @@
 
       tierBody.appendChild(tr);
 
+      if (tier.uses != null && tier.uses > 0) cumulative += tier.uses;
+    });
+  }
+
+  // Updates range text and inline error messages in place, without touching
+  // input elements — keeps focus and in-progress typing (e.g. a trailing
+  // decimal point) intact, unlike a full renderTiers() rebuild.
+  function updateComputedColumns() {
+    const tiers = activeTable().tiers;
+    let cumulative = 0;
+    Array.from(tierBody.children).forEach((tr, i) => {
+      const tier = tiers[i];
+      const isLast = i === tiers.length - 1;
+
+      const usesTd = tr.children[0];
+      const usesInvalid = !isLast && (tier.uses == null || !(tier.uses > 0));
+      let usesErr = usesTd.querySelector(".row-err");
+      if (usesInvalid && !usesErr) {
+        usesErr = document.createElement("div");
+        usesErr.className = "row-err";
+        usesErr.textContent = "Required (> 0)";
+        usesTd.appendChild(usesErr);
+      } else if (!usesInvalid && usesErr) {
+        usesErr.remove();
+      }
+
+      const rateTd = tr.children[1];
+      const rateInvalid = !(tier.rate >= 0);
+      let rateErr = rateTd.querySelector(".row-err");
+      if (rateInvalid && !rateErr) {
+        rateErr = document.createElement("div");
+        rateErr.className = "row-err";
+        rateErr.textContent = "Required (≥ 0)";
+        rateTd.appendChild(rateErr);
+      } else if (!rateInvalid && rateErr) {
+        rateErr.remove();
+      }
+
+      tr.children[2].textContent = fmtRange(cumulative, tier);
       if (tier.uses != null && tier.uses > 0) cumulative += tier.uses;
     });
   }
