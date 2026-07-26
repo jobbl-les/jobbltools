@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Social Ad &amp; Post Size Templates — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main { width: 100%; max-width: 820px; }
+  a.back { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 1.4rem; margin: 0.75rem 0 0.3rem; }
+  p.sub { color: var(--muted); font-size: 0.9rem; margin-top: 0; margin-bottom: 1.25rem; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+  }
+  select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 0.6rem 0.7rem;
+    font-size: 0.95rem;
+  }
+
+  .preview-wrap {
+    margin-top: 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background:
+      linear-gradient(45deg, #00000010 25%, transparent 25%, transparent 75%, #00000010 75%),
+      linear-gradient(45deg, #00000010 25%, transparent 25%, transparent 75%, #00000010 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+  }
+  canvas#previewCanvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.85rem;
+    flex-wrap: wrap;
+  }
+  .meta-row .dims { font-size: 0.85rem; color: var(--muted); }
+  .meta-row .dims strong { color: var(--fg); }
+  .note { font-size: 0.78rem; color: var(--muted); margin-top: 0.3rem; }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+    flex-wrap: wrap;
+  }
+  .controls button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 0.55rem 1rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .controls button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+  }
+  .controls button:hover { border-color: var(--accent); }
+
+  .caveats { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+  .caveats a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>Social Ad &amp; Post Size Templates</h1>
+  <p class="sub">Pick a platform and format, see it at the exact pixel size, and download a blank canvas to design on — as PNG or PDF.</p>
+
+  <div class="card">
+    <label for="format">Format</label>
+    <select id="format"></select>
+
+    <div class="preview-wrap">
+      <canvas id="previewCanvas"></canvas>
+    </div>
+
+    <div class="meta-row">
+      <span class="dims"><strong id="dimsText"></strong></span>
+      <span class="dims" id="ratioText"></span>
+    </div>
+    <p class="note" id="formatNote" hidden></p>
+
+    <div class="controls">
+      <button type="button" id="downloadPng" class="primary">Download PNG</button>
+      <button type="button" id="downloadPdf">Download PDF</button>
+    </div>
+  </div>
+
+  <p class="caveats">
+    Every size below is taken from each platform's own current help/business documentation, not a third-party
+    cheat sheet — sources are noted where a platform states a best-practice figure rather than one fixed
+    official spec. Platforms tweak these numbers occasionally; if a design really matters, double-check
+    against the platform's own help pages before final export. The downloaded image has a white background with
+    the dimensions printed faintly in the centre, purely as a placement guide — crop or paint over it as needed.
+  </p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  // Every entry verified against each platform's own current help/business
+  // documentation (not third-party "size guide" blogs). Where a platform
+  // states a best-practice figure rather than one fixed official spec, that's
+  // recorded in `note`.
+  const FORMATS = [
+    { platform: "Facebook", label: "Feed Post (Portrait 4:5)", w: 1440, h: 1800 },
+    { platform: "Facebook", label: "Feed Post (Square 1:1)", w: 1440, h: 1440 },
+    { platform: "Facebook", label: "Story", w: 1080, h: 1920 },
+    { platform: "Facebook", label: "Cover Photo", w: 851, h: 315 },
+    { platform: "Facebook", label: "Event Cover Image", w: 1920, h: 1005,
+      note: "Meta no longer publishes one fixed pixel spec for this — 1920×1005 (1.91:1) is the current mobile-safe best practice." },
+
+    { platform: "Instagram", label: "Feed Post (Square 1:1)", w: 1080, h: 1080 },
+    { platform: "Instagram", label: "Feed Post (Portrait 4:5)", w: 1080, h: 1350 },
+    { platform: "Instagram", label: "Feed Post (Landscape 1.91:1)", w: 1080, h: 566 },
+    { platform: "Instagram", label: "Story / Reel", w: 1080, h: 1920 },
+    { platform: "Instagram", label: "Profile Picture", w: 1080, h: 1080,
+      note: "Displays as a 320×320 circle — upload larger so it stays sharp." },
+
+    { platform: "X (Twitter)", label: "In-Stream Photo Post", w: 1200, h: 675 },
+    { platform: "X (Twitter)", label: "Image Ad (1.91:1)", w: 800, h: 418 },
+    { platform: "X (Twitter)", label: "Header / Banner Image", w: 1500, h: 500 },
+    { platform: "X (Twitter)", label: "Profile Picture", w: 400, h: 400 },
+
+    { platform: "LinkedIn", label: "Single Image Ad (1.91:1)", w: 1200, h: 628 },
+    { platform: "LinkedIn", label: "Single Image Ad (Square)", w: 1200, h: 1200 },
+    { platform: "LinkedIn", label: "Company Page Cover Image", w: 4200, h: 700,
+      note: "Renders at 1128×191 on the page — this is the required upload size." },
+    { platform: "LinkedIn", label: "Personal Profile Cover Banner", w: 1584, h: 396 },
+    { platform: "LinkedIn", label: "Personal Profile Picture", w: 400, h: 400 },
+
+    { platform: "TikTok", label: "In-Feed Ad / Video Cover", w: 1080, h: 1920 },
+    { platform: "TikTok", label: "Profile Picture", w: 1000, h: 1000,
+      note: "Displays much smaller — upload large so it stays sharp when scaled down." },
+
+    { platform: "Pinterest", label: "Standard Pin (2:3)", w: 1000, h: 1500 },
+    { platform: "Pinterest", label: "Story Pin (9:16, full-screen)", w: 1080, h: 1920 },
+
+    { platform: "YouTube", label: "Video Thumbnail", w: 3840, h: 2160,
+      note: "YouTube's current stated recommendation (min width 640px). 1280×720 is still fully compatible and widely used." },
+    { platform: "YouTube", label: "Channel Banner", w: 2560, h: 1440,
+      note: "Minimum safe area for text/logo is 1235×338, centred." },
+    { platform: "YouTube", label: "Profile Picture", w: 800, h: 800 },
+
+    { platform: "Snapchat", label: "Single Image / Video Ad", w: 1080, h: 1920 }
+  ];
+
+  function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+  function ratioOf(w, h) {
+    const d = gcd(w, h);
+    return (w / d) + ":" + (h / d);
+  }
+
+  const formatSelect = document.getElementById("format");
+  const canvas = document.getElementById("previewCanvas");
+  const ctx = canvas.getContext("2d");
+  const dimsText = document.getElementById("dimsText");
+  const ratioText = document.getElementById("ratioText");
+  const formatNote = document.getElementById("formatNote");
+  const downloadPngBtn = document.getElementById("downloadPng");
+  const downloadPdfBtn = document.getElementById("downloadPdf");
+
+  let platforms = [];
+  FORMATS.forEach(f => { if (platforms.indexOf(f.platform) === -1) platforms.push(f.platform); });
+
+  platforms.forEach(platform => {
+    const group = document.createElement("optgroup");
+    group.label = platform;
+    FORMATS.forEach((f, i) => {
+      if (f.platform !== platform) return;
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = f.label + " — " + f.w + " × " + f.h;
+      group.appendChild(opt);
+    });
+    formatSelect.appendChild(group);
+  });
+
+  function currentFormat() {
+    return FORMATS[parseInt(formatSelect.value, 10)];
+  }
+
+  function watermarkText(f) {
+    return f.w + " × " + f.h + " px";
+  }
+
+  function draw() {
+    const f = currentFormat();
+    canvas.width = f.w;
+    canvas.height = f.h;
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, f.w, f.h);
+
+    const text = watermarkText(f);
+    const fontSize = Math.max(16, Math.round(Math.min(f.w, f.h) * 0.05));
+    ctx.font = fontSize + "px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.16)";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, f.w / 2, f.h / 2);
+
+    dimsText.textContent = f.platform + " — " + f.label + " (" + f.w + " × " + f.h + " px)";
+    ratioText.textContent = ratioOf(f.w, f.h);
+
+    if (f.note) {
+      formatNote.textContent = f.note;
+      formatNote.hidden = false;
+    } else {
+      formatNote.hidden = true;
+    }
+  }
+
+  formatSelect.addEventListener("change", draw);
+
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function filenameFor(f, ext) {
+    const slug = (f.platform + "-" + f.label)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    return slug + "-" + f.w + "x" + f.h + "." + ext;
+  }
+
+  downloadPngBtn.addEventListener("click", () => {
+    const f = currentFormat();
+    canvas.toBlob(blob => triggerDownload(blob, filenameFor(f, "png")), "image/png");
+  });
+
+  // Builds a minimal single-page PDF by hand (no library): a white background
+  // rect plus the same watermark text, drawn with the core Helvetica font so
+  // no font needs to be embedded. Only ASCII-range bytes are used in the
+  // content stream except for the multiplication sign, which is encoded via
+  // WinAnsiEncoding and written out as a raw Latin-1 byte — Blob() would
+  // otherwise silently re-encode a JS string as UTF-8 and corrupt that byte.
+  function escapePdfText(str) {
+    return str.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  }
+
+  function buildPdf(f) {
+    const w = f.w, h = f.h;
+    const text = watermarkText(f);
+    const fontSize = Math.max(16, Math.round(Math.min(w, h) * 0.05));
+    // Helvetica has no fixed-width guarantee, but this average-character-width
+    // estimate is accurate enough to centre a subtle watermark.
+    const approxTextWidth = text.length * fontSize * 0.55;
+    const x = (w - approxTextWidth) / 2;
+    const y = h / 2 - fontSize * 0.32;
+
+    let content = "1 1 1 rg\n0 0 " + w + " " + h + " re\nf\n";
+    content += "0.84 0.84 0.84 rg\nBT\n/F1 " + fontSize + " Tf\n";
+    content += x.toFixed(2) + " " + y.toFixed(2) + " Td\n";
+    content += "(" + escapePdfText(text) + ") Tj\nET\n";
+
+    const objects = [
+      "<< /Type /Catalog /Pages 2 0 R >>",
+      "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + w + " " + h + "] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+      "<< /Length " + content.length + " >>\nstream\n" + content + "endstream",
+      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"
+    ];
+
+    let pdf = "%PDF-1.4\n";
+    const offsets = [];
+    objects.forEach(function (obj, i) {
+      offsets[i] = pdf.length;
+      pdf += (i + 1) + " 0 obj\n" + obj + "\nendobj\n";
+    });
+
+    const xrefStart = pdf.length;
+    let xref = "xref\n0 " + (objects.length + 1) + "\n";
+    xref += "0000000000 65535 f\r\n";
+    for (let i = 0; i < objects.length; i++) {
+      xref += String(offsets[i]).padStart(10, "0") + " 00000 n\r\n";
+    }
+    pdf += xref;
+    pdf += "trailer\n<< /Size " + (objects.length + 1) + " /Root 1 0 R >>\nstartxref\n" + xrefStart + "\n%%EOF";
+
+    return pdf;
+  }
+
+  function toLatin1Bytes(str) {
+    const bytes = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i) & 0xff;
+    return bytes;
+  }
+
+  downloadPdfBtn.addEventListener("click", () => {
+    const f = currentFormat();
+    const pdfString = buildPdf(f);
+    const blob = new Blob([toLatin1Bytes(pdfString)], { type: "application/pdf" });
+    triggerDownload(blob, filenameFor(f, "pdf"));
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>
