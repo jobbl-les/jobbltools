@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Capture Window Sizer — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+    --good: #16a34a;
+    --warn: #d97706;
+    --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+      --good: #4ade80;
+      --warn: #fbbf24;
+      --bad: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main { width: 100%; max-width: 820px; }
+  a.back { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 1.4rem; margin: 0.75rem 0 0.3rem; }
+  p.sub { color: var(--muted); font-size: 0.9rem; margin-top: 0; margin-bottom: 1.25rem; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.75rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+  }
+  select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 0.6rem 0.7rem;
+    font-size: 0.95rem;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+    flex-wrap: wrap;
+  }
+  .controls button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 0.55rem 1rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .controls button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+  }
+  .controls button:hover { border-color: var(--accent); }
+
+  .readout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0.9rem;
+  }
+  .readout .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.7rem 0.85rem;
+  }
+  .readout .stat .k {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .readout .stat .v {
+    font-size: 1.15rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .match-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    margin-top: 0.9rem;
+  }
+  .match-badge.match { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+  .match-badge.close { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+  .match-badge.off { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+
+  .popup-status {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 0.6rem;
+    min-height: 1.2em;
+  }
+
+  .note { font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.5; }
+
+  .caveats { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+  .caveats a { color: var(--muted); }
+  .caveats ul { margin: 0.4rem 0; padding-left: 1.2rem; }
+
+  /* Full-size guide overlay */
+  #guideLayer {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    overflow: auto;
+    background: rgba(0, 0, 0, 0.35);
+    display: none;
+  }
+  #guideLayer.active { display: block; }
+  #guideBox {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 2px dashed var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #guideBox span {
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  #closeGuide {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10000;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>Video Capture Window Sizer</h1>
+  <p class="sub">Pick a common video resolution and get your browser viewport to exactly that size before you start recording.</p>
+
+  <div class="card">
+    <label for="resolution">Resolution</label>
+    <select id="resolution"></select>
+
+    <div class="controls">
+      <button type="button" id="openPopup" class="primary">Open sized popup window</button>
+      <button type="button" id="toggleGuide">Show full-size guide overlay</button>
+    </div>
+    <p class="popup-status" id="popupStatus"></p>
+
+    <div class="readout">
+      <div class="stat">
+        <div class="k">Current viewport</div>
+        <div class="v" id="currentViewport"></div>
+      </div>
+      <div class="stat">
+        <div class="k">Target</div>
+        <div class="v" id="targetViewport"></div>
+      </div>
+    </div>
+    <span class="match-badge" id="matchBadge"></span>
+    <p class="note" id="dprNote"></p>
+  </div>
+
+  <p class="caveats">
+    <strong>How this works, and its real limits:</strong>
+    <ul>
+      <li>Browsers don't let a page resize the tab you're already reading this in — that's a deliberate security
+        restriction. "Open sized popup window" instead opens a <em>new</em> window sized to compensate for that
+        window's toolbars/borders, so its content area lands on the target size. If your browser blocks the popup,
+        allow popups for this site and click again.</li>
+      <li>Some browsers (particularly Safari, and any window with more than one tab) restrict script-driven resizing
+        further and may ignore the correction — if the readout above doesn't turn green after opening the popup,
+        drag its corner while watching the live numbers; they update in real time.</li>
+      <li>On a phone or tablet there's no OS-level window to resize, so this only meaningfully works on desktop.</li>
+      <li>The "full-size guide overlay" always works, in any window, on any device — it draws a real-pixel-accurate
+        box you can align a manual screen-recording crop against, without needing to resize anything.</li>
+      <li><strong>HiDPI/Retina displays:</strong> your browser reports viewport size in CSS pixels, but most screen
+        recorders capture at CSS pixels &times; your display's pixel ratio. On a typical 2&times; Retina screen, a
+        1920&times;1080 viewport is usually captured as 3840&times;2160 raw pixels unless your recording software
+        downscales — check your recorder's output setting if the exact pixel count matters.</li>
+    </ul>
+  </p>
+</main>
+
+<div id="guideLayer">
+  <button type="button" id="closeGuide">Close guide &times;</button>
+  <div id="guideBox"><span id="guideBoxLabel"></span></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const RESOLUTIONS = [
+    { group: "Landscape (16:9)", label: "360p", w: 640, h: 360 },
+    { group: "Landscape (16:9)", label: "480p", w: 854, h: 480 },
+    { group: "Landscape (16:9)", label: "720p (HD)", w: 1280, h: 720 },
+    { group: "Landscape (16:9)", label: "1080p (Full HD)", w: 1920, h: 1080 },
+    { group: "Landscape (16:9)", label: "1440p (QHD)", w: 2560, h: 1440 },
+    { group: "Landscape (16:9)", label: "2160p (4K UHD)", w: 3840, h: 2160 },
+
+    { group: "Vertical / Mobile (9:16)", label: "360p", w: 360, h: 640 },
+    { group: "Vertical / Mobile (9:16)", label: "480p", w: 480, h: 854 },
+    { group: "Vertical / Mobile (9:16)", label: "720p (HD)", w: 720, h: 1280 },
+    { group: "Vertical / Mobile (9:16)", label: "1080p (Full HD)", w: 1080, h: 1920 },
+    { group: "Vertical / Mobile (9:16)", label: "1440p (QHD)", w: 1440, h: 2560 },
+    { group: "Vertical / Mobile (9:16)", label: "2160p (4K UHD)", w: 2160, h: 3840 },
+
+    { group: "Square (1:1)", label: "Small", w: 720, h: 720 },
+    { group: "Square (1:1)", label: "Standard", w: 1080, h: 1080 }
+  ];
+
+  const resolutionSelect = document.getElementById("resolution");
+  const openPopupBtn = document.getElementById("openPopup");
+  const popupStatus = document.getElementById("popupStatus");
+  const toggleGuideBtn = document.getElementById("toggleGuide");
+  const currentViewportEl = document.getElementById("currentViewport");
+  const targetViewportEl = document.getElementById("targetViewport");
+  const matchBadge = document.getElementById("matchBadge");
+  const dprNote = document.getElementById("dprNote");
+  const guideLayer = document.getElementById("guideLayer");
+  const guideBox = document.getElementById("guideBox");
+  const guideBoxLabel = document.getElementById("guideBoxLabel");
+  const closeGuideBtn = document.getElementById("closeGuide");
+
+  let groups = [];
+  RESOLUTIONS.forEach(r => { if (groups.indexOf(r.group) === -1) groups.push(r.group); });
+
+  groups.forEach(group => {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = group;
+    RESOLUTIONS.forEach((r, i) => {
+      if (r.group !== group) return;
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = r.label + " — " + r.w + " × " + r.h;
+      optgroup.appendChild(opt);
+    });
+    resolutionSelect.appendChild(optgroup);
+  });
+
+  function currentResolution() {
+    return RESOLUTIONS[parseInt(resolutionSelect.value, 10)];
+  }
+
+  // If this page was opened as this tool's own sized popup, the URL carries
+  // ?w=&h=&auto=1 — preselect the matching resolution so the popup shows the
+  // same target it's trying to become.
+  function preselectFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    const w = parseInt(params.get("w"), 10);
+    const h = parseInt(params.get("h"), 10);
+    if (!w || !h) return null;
+    const idx = RESOLUTIONS.findIndex(r => r.w === w && r.h === h);
+    if (idx !== -1) resolutionSelect.value = String(idx);
+    return params.get("auto") === "1" ? { w, h } : null;
+  }
+
+  function updateReadout() {
+    const r = currentResolution();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    currentViewportEl.textContent = vw + " × " + vh;
+    targetViewportEl.textContent = r.w + " × " + r.h;
+
+    const dw = Math.abs(vw - r.w), dh = Math.abs(vh - r.h);
+    matchBadge.classList.remove("match", "close", "off");
+    if (dw === 0 && dh === 0) {
+      matchBadge.textContent = "✓ Matches exactly";
+      matchBadge.classList.add("match");
+    } else if (dw <= 3 && dh <= 3) {
+      matchBadge.textContent = "✓ Close enough (within a few px — likely a scrollbar)";
+      matchBadge.classList.add("close");
+    } else {
+      matchBadge.textContent = "✗ Off by " + dw + " × " + dh + " px";
+      matchBadge.classList.add("off");
+    }
+
+    const dpr = window.devicePixelRatio || 1;
+    if (dpr !== 1) {
+      dprNote.textContent = "Your display's pixel ratio is " + dpr + "× — a screen recording of this viewport " +
+        "will likely capture at " + Math.round(vw * dpr) + " × " + Math.round(vh * dpr) + " raw pixels, not " +
+        vw + " × " + vh + ", unless your recorder downscales.";
+    } else {
+      dprNote.textContent = "";
+    }
+  }
+
+  resolutionSelect.addEventListener("change", () => {
+    updateReadout();
+    if (guideLayer.classList.contains("active")) showGuide();
+  });
+  window.addEventListener("resize", updateReadout);
+
+  // ---------- Open sized popup, then self-correct for browser chrome ----------
+
+  openPopupBtn.addEventListener("click", () => {
+    const r = currentResolution();
+    const name = "capture_" + r.w + "x" + r.h;
+    const url = window.location.pathname + "?w=" + r.w + "&h=" + r.h + "&auto=1";
+    const features = "left=80,top=80,width=" + r.w + ",height=" + r.h +
+      ",menubar=no,toolbar=no,location=no,status=no,resizable=yes";
+    const win = window.open(url, name, features);
+    if (!win) {
+      popupStatus.textContent = "Your browser blocked the popup — allow popups for this site, then click again.";
+      return;
+    }
+    popupStatus.textContent = "Popup opened — resizing it to compensate for its toolbars/borders…";
+  });
+
+  function attemptSelfResize(target, attemptsLeft) {
+    const chromeW = window.outerWidth - window.innerWidth;
+    const chromeH = window.outerHeight - window.innerHeight;
+    window.resizeTo(target.w + chromeW, target.h + chromeH);
+
+    window.requestAnimationFrame(() => {
+      updateReadout();
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const matched = vw === target.w && vh === target.h;
+      if (matched) {
+        popupStatus.textContent = "Viewport matches " + target.w + " × " + target.h + " exactly.";
+      } else if (attemptsLeft > 0) {
+        setTimeout(() => attemptSelfResize(target, attemptsLeft - 1), 150);
+      } else {
+        popupStatus.textContent = "This browser only partially honoured the resize — drag the window's corner " +
+          "while watching the readout above; it updates live.";
+      }
+    });
+  }
+
+  const autoTarget = preselectFromQuery();
+  if (autoTarget) {
+    popupStatus.textContent = "Resizing to compensate for this window's toolbars/borders…";
+    setTimeout(() => attemptSelfResize(autoTarget, 4), 60);
+  }
+
+  // ---------- Full-size guide overlay ----------
+
+  function showGuide() {
+    const r = currentResolution();
+    guideBox.style.width = r.w + "px";
+    guideBox.style.height = r.h + "px";
+    guideBoxLabel.textContent = r.w + " × " + r.h;
+    guideLayer.classList.add("active");
+    toggleGuideBtn.textContent = "Hide full-size guide overlay";
+  }
+
+  function hideGuide() {
+    guideLayer.classList.remove("active");
+    toggleGuideBtn.textContent = "Show full-size guide overlay";
+  }
+
+  toggleGuideBtn.addEventListener("click", () => {
+    if (guideLayer.classList.contains("active")) hideGuide();
+    else showGuide();
+  });
+  closeGuideBtn.addEventListener("click", hideGuide);
+
+  updateReadout();
+})();
+</script>
+</body>
+</html>
