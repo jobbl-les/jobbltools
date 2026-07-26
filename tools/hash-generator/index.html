@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hash Generator — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+    --good: #16a34a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+      --good: #4ade80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main { width: 100%; max-width: 780px; }
+  a.back { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 1.4rem; margin: 0.75rem 0 0.3rem; }
+  p.sub { color: var(--muted); font-size: 0.9rem; margin-top: 0; margin-bottom: 1.25rem; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .mode-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.9rem;
+  }
+  .mode-tabs button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .mode-tabs button.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+  }
+
+  textarea#textInput {
+    width: 100%;
+    min-height: 120px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 0.7rem 0.85rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9rem;
+    resize: vertical;
+  }
+
+  #dropZone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+  #dropZone.dragover { border-color: var(--accent); color: var(--fg); }
+  #dropZone input { display: none; }
+  #fileMeta { font-size: 0.85rem; color: var(--muted); margin-top: 0.6rem; }
+
+  .byte-count {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .toolbar h2 { font-size: 0.95rem; margin: 0; }
+  .toolbar button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .hash-row {
+    display: grid;
+    grid-template-columns: 110px 1fr auto;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .hash-row:last-child { border-bottom: none; }
+  .hash-row .algo {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .hash-row .value {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    word-break: break-all;
+  }
+  .hash-row .value.pending { color: var(--muted); font-style: italic; }
+  .hash-row button.copy {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 6px;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .hash-row button.copy.copied { color: var(--good); border-color: var(--good); }
+
+  .note { font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.5; }
+  .warning { font-size: 0.82rem; color: var(--accent); margin-top: 0.6rem; }
+
+  .caveats { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+  .caveats ul { margin: 0.4rem 0; padding-left: 1.2rem; }
+
+  @media (max-width: 480px) {
+    .hash-row { grid-template-columns: 1fr; row-gap: 0.3rem; }
+    .hash-row button.copy { justify-self: start; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>Hash Generator</h1>
+  <p class="sub">Generate MD5, SHA-1, SHA-2, SHA-3, Keccak-256, and CRC-32 from text or a file — entirely in your browser.</p>
+
+  <div class="card">
+    <div class="mode-tabs">
+      <button type="button" id="tabText" class="active">Text</button>
+      <button type="button" id="tabFile">File</button>
+    </div>
+
+    <div id="textPanel">
+      <textarea id="textInput" placeholder="Type or paste anything…" spellcheck="false"></textarea>
+      <div class="byte-count" id="byteCount"></div>
+    </div>
+
+    <div id="filePanel" hidden>
+      <div id="dropZone">
+        Drop a file here, or click to choose one
+        <input type="file" id="fileInput">
+      </div>
+      <div id="fileMeta"></div>
+      <p class="warning" id="sizeWarning" hidden></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <h2>Digests</h2>
+      <button type="button" id="toggleCase">Show UPPERCASE</button>
+    </div>
+    <div id="results"></div>
+    <p class="note" id="statusNote"></p>
+  </div>
+
+  <p class="caveats">
+    <strong>Worth knowing:</strong>
+    <ul>
+      <li>Everything runs locally in your browser — nothing you type or upload here is sent anywhere.</li>
+      <li>Text is hashed as UTF-8 bytes, exactly as typed, with <strong>no trailing newline</strong> added — this
+        matches <code>printf '%s' "text" | shasum</code>, not <code>echo "text" | shasum</code> (which adds one).</li>
+      <li>MD5 and SHA-1 are cryptographically broken and shouldn't be relied on for security purposes (signatures,
+        password storage, tamper-proofing) — they're included here purely for compatibility/checksum comparison
+        against existing systems that still use them.</li>
+      <li><strong>Keccak-256 is not the same as SHA3-256</strong>, despite the similar name and despite Ethereum
+        tooling colloquially calling Keccak-256 "sha3" — NIST changed the padding when Keccak was standardised as
+        SHA-3, so the two produce different digests for identical input. Both are provided since both are in
+        common use.</li>
+      <li>MD5, the SHA-3 family, Keccak-256, and CRC-32 are hand-implemented in plain JavaScript (the browser has
+        no built-in support for them) and verified against known test vectors — see
+        <a href="hash-lib.test.js" target="_blank" rel="noopener">hash-lib.test.js</a>. SHA-1/256/384/512 use the
+        browser's own built-in SubtleCrypto implementation. Very large files may take a noticeable moment,
+        particularly for the hand-implemented algorithms.</li>
+    </ul>
+  </p>
+</main>
+
+<script src="hash-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  const tabText = document.getElementById("tabText");
+  const tabFile = document.getElementById("tabFile");
+  const textPanel = document.getElementById("textPanel");
+  const filePanel = document.getElementById("filePanel");
+  const textInput = document.getElementById("textInput");
+  const byteCount = document.getElementById("byteCount");
+  const dropZone = document.getElementById("dropZone");
+  const fileInput = document.getElementById("fileInput");
+  const fileMeta = document.getElementById("fileMeta");
+  const sizeWarning = document.getElementById("sizeWarning");
+  const resultsEl = document.getElementById("results");
+  const statusNote = document.getElementById("statusNote");
+  const toggleCaseBtn = document.getElementById("toggleCase");
+
+  const ALGORITHMS = [
+    { key: "md5", label: "MD5", fn: bytes => HashLib.md5(bytes) },
+    { key: "sha1", label: "SHA-1", fn: bytes => subtleHex("SHA-1", bytes) },
+    { key: "sha256", label: "SHA-256", fn: bytes => subtleHex("SHA-256", bytes) },
+    { key: "sha384", label: "SHA-384", fn: bytes => subtleHex("SHA-384", bytes) },
+    { key: "sha512", label: "SHA-512", fn: bytes => subtleHex("SHA-512", bytes) },
+    { key: "sha3_224", label: "SHA3-224", fn: bytes => HashLib.sha3_224(bytes) },
+    { key: "sha3_256", label: "SHA3-256", fn: bytes => HashLib.sha3_256(bytes) },
+    { key: "sha3_384", label: "SHA3-384", fn: bytes => HashLib.sha3_384(bytes) },
+    { key: "sha3_512", label: "SHA3-512", fn: bytes => HashLib.sha3_512(bytes) },
+    { key: "keccak256", label: "Keccak-256", fn: bytes => HashLib.keccak256(bytes) },
+    { key: "crc32", label: "CRC-32", fn: bytes => HashLib.crc32(bytes) }
+  ];
+
+  let uppercase = false;
+  let currentValues = {};
+  let requestId = 0;
+
+  async function subtleHex(algo, bytes) {
+    const digest = await crypto.subtle.digest(algo, bytes);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function buildRows() {
+    resultsEl.innerHTML = "";
+    ALGORITHMS.forEach(a => {
+      const row = document.createElement("div");
+      row.className = "hash-row";
+      row.innerHTML =
+        '<div class="algo">' + a.label + '</div>' +
+        '<div class="value pending" id="value-' + a.key + '">—</div>' +
+        '<button type="button" class="copy" id="copy-' + a.key + '">Copy</button>';
+      resultsEl.appendChild(row);
+
+      row.querySelector(".copy").addEventListener("click", () => {
+        const val = currentValues[a.key];
+        if (!val) return;
+        navigator.clipboard.writeText(uppercase ? val.toUpperCase() : val).then(() => {
+          const btn = row.querySelector(".copy");
+          btn.textContent = "Copied!";
+          btn.classList.add("copied");
+          setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1200);
+        });
+      });
+    });
+  }
+
+  function renderValue(key, hex) {
+    const el = document.getElementById("value-" + key);
+    if (!el) return;
+    el.textContent = uppercase ? hex.toUpperCase() : hex;
+    el.classList.remove("pending");
+  }
+
+  function clearValues() {
+    currentValues = {};
+    ALGORITHMS.forEach(a => {
+      const el = document.getElementById("value-" + a.key);
+      if (el) { el.textContent = "—"; el.classList.add("pending"); }
+    });
+  }
+
+  // Runs algorithms one at a time (yielding to the event loop between each)
+  // rather than all at once, so the tab stays responsive and the status
+  // line can report progress on a large file with the slower, hand-written
+  // algorithms.
+  async function computeAll(bytes) {
+    const myRequest = ++requestId;
+    clearValues();
+    for (const a of ALGORITHMS) {
+      if (myRequest !== requestId) return;
+      statusNote.textContent = "Computing " + a.label + "…";
+      await new Promise(resolve => setTimeout(resolve, 0));
+      if (myRequest !== requestId) return;
+      const hex = await a.fn(bytes);
+      if (myRequest !== requestId) return;
+      currentValues[a.key] = hex;
+      renderValue(a.key, hex);
+    }
+    statusNote.textContent = "Done.";
+  }
+
+  // ---------- Mode switching ----------
+
+  function setMode(mode) {
+    const isText = mode === "text";
+    tabText.classList.toggle("active", isText);
+    tabFile.classList.toggle("active", !isText);
+    textPanel.hidden = !isText;
+    filePanel.hidden = isText;
+    if (isText) {
+      hashText();
+    } else {
+      requestId++;
+      clearValues();
+      statusNote.textContent = fileInput.files.length ? "" : "Choose a file to hash it.";
+    }
+  }
+
+  tabText.addEventListener("click", () => setMode("text"));
+  tabFile.addEventListener("click", () => setMode("file"));
+
+  // ---------- Text mode ----------
+
+  let debounceTimer = null;
+  function hashText() {
+    const text = textInput.value;
+    const bytes = new TextEncoder().encode(text);
+    byteCount.textContent = bytes.length + " byte" + (bytes.length === 1 ? "" : "s");
+    computeAll(bytes);
+  }
+
+  textInput.addEventListener("input", () => {
+    byteCount.textContent = new TextEncoder().encode(textInput.value).length + " bytes";
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(hashText, 200);
+  });
+
+  // ---------- File mode ----------
+
+  const LARGE_FILE_WARNING_BYTES = 100 * 1024 * 1024;
+
+  function formatBytes(n) {
+    if (n < 1024) return n + " B";
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+    if (n < 1024 * 1024 * 1024) return (n / (1024 * 1024)).toFixed(1) + " MB";
+    return (n / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+  }
+
+  async function hashFile(file) {
+    fileMeta.textContent = file.name + " — " + formatBytes(file.size);
+    if (file.size > LARGE_FILE_WARNING_BYTES) {
+      sizeWarning.hidden = false;
+      sizeWarning.textContent = "This is a large file (" + formatBytes(file.size) + ") — it's read entirely into " +
+        "memory and the hand-implemented algorithms (MD5, SHA-3, Keccak-256, CRC-32) may take a while.";
+    } else {
+      sizeWarning.hidden = true;
+    }
+    statusNote.textContent = "Reading file…";
+    const buffer = await file.arrayBuffer();
+    computeAll(new Uint8Array(buffer));
+  }
+
+  dropZone.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files[0]) hashFile(fileInput.files[0]);
+  });
+  dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("dragover"); });
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+    if (e.dataTransfer.files[0]) hashFile(e.dataTransfer.files[0]);
+  });
+
+  // ---------- Case toggle ----------
+
+  toggleCaseBtn.addEventListener("click", () => {
+    uppercase = !uppercase;
+    toggleCaseBtn.textContent = uppercase ? "Show lowercase" : "Show UPPERCASE";
+    Object.keys(currentValues).forEach(key => renderValue(key, currentValues[key]));
+  });
+
+  buildRows();
+  hashText();
+})();
+</script>
+</body>
+</html>
