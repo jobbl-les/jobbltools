@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retirement Income Projection — tools</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --bg: #f9f9f7;
+    --surface: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --border: #ddd;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --card: #f5f5f7;
+    --accent: #2563eb;
+    --bad: #dc2626;
+    --good: #16a34a;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #7c3aed;
+    --bar-min: #c3c2b7;
+    --bar-mod: #898781;
+    --bar-comf: #52514e;
+  }
+  @media (prefers-color-scheme: dark) {
+    .viz-root {
+      color-scheme: dark;
+      --bg: #0d0d0d;
+      --surface: #1a1a19;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --border: #333;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --card: #1e1e1e;
+      --accent: #60a5fa;
+      --bad: #f87171;
+      --good: #4ade80;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #9163f2;
+      --bar-min: #383835;
+      --bar-mod: #52514e;
+      --bar-comf: #898781;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main { width: 100%; max-width: 860px; }
+  a.back { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 1.4rem; margin: 0.75rem 0 0.3rem; }
+  h2 { font-size: 1rem; margin: 0 0 0.9rem; }
+  p.sub { color: var(--text-secondary); font-size: 0.9rem; margin-top: 0; margin-bottom: 1.25rem; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.3rem; }
+  input[type="number"], input[type="text"] {
+    width: 100%; padding: 0.6rem 0.7rem; font-size: 1rem;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--text-primary);
+  }
+  input[type="range"] { width: 100%; accent-color: var(--accent); margin-top: 0.4rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .field { margin-bottom: 0; }
+  .field + .field { margin-top: 1rem; }
+  .radio-row { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 0.3rem; }
+  .radio-opt { display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem; color: var(--text-primary); }
+  .radio-opt input { width: 15px; height: 15px; }
+  .check-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: var(--text-primary); margin-top: 0.5rem; }
+  .check-row input { width: 15px; height: 15px; }
+  .slider-value { display: flex; justify-content: space-between; align-items: baseline; }
+  .slider-value .val { font-weight: 600; font-size: 1.05rem; color: var(--text-primary); }
+  .note { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.5; }
+  hr.sep { border: none; border-top: 1px solid var(--border); margin: 1.1rem 0; }
+
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  @media (min-width: 560px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+  .stat-label { font-size: 0.76rem; color: var(--text-secondary); margin-bottom: 0.25rem; }
+  .stat-value { font-size: 1.25rem; font-weight: 600; color: var(--text-primary); }
+  .stat-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; }
+  .headline-chip { margin-top: 1rem; font-size: 0.88rem; padding: 0.65rem 0.8rem; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); }
+  .headline-chip b { color: var(--text-primary); }
+  .headline-chip.good { border-color: var(--good); }
+  .headline-chip.bad { border-color: var(--bad); }
+
+  .chart-wrap { position: relative; margin-top: 0.5rem; }
+  svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+  .axis-title { font-size: 12px; fill: var(--text-secondary); }
+  .tick-label { font-size: 11px; fill: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .axis-line { stroke: var(--axis); stroke-width: 1; }
+  .series-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .area-fill { opacity: 0.14; }
+  .ref-line { stroke: var(--axis); stroke-width: 1; stroke-dasharray: 4 3; }
+  .crosshair { stroke: var(--axis); stroke-width: 1; pointer-events: none; }
+  .end-dot { stroke: var(--surface); stroke-width: 2; }
+
+  .tooltip {
+    position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.55rem 0.7rem; font-size: 0.8rem; color: var(--text-secondary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15); white-space: nowrap; opacity: 0; transition: opacity 0.08s; z-index: 5;
+  }
+  .tooltip.show { opacity: 1; }
+  .tooltip .t-head { font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; }
+  .tooltip .t-row { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.15rem; }
+  .tooltip .key { width: 10px; height: 2px; display: inline-block; }
+  .tooltip .val { font-weight: 600; color: var(--text-primary); margin-left: auto; padding-left: 0.75rem; }
+
+  .caveats { font-size: 0.78rem; color: var(--text-muted); line-height: 1.55; }
+  .caveats p { margin: 0 0 0.6rem; }
+  .table-toggle {
+    background: none; border: 1px solid var(--border); color: var(--text-secondary); border-radius: 8px;
+    padding: 0.45rem 0.8rem; font-size: 0.82rem; cursor: pointer; margin-top: 0.75rem;
+  }
+  .table-wrap { margin-top: 0.75rem; overflow-x: auto; display: none; max-height: 420px; }
+  .table-wrap.show { display: block; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+  th, td { text-align: right; padding: 0.35rem 0.55rem; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-secondary); font-weight: 600; position: sticky; top: 0; background: var(--card); }
+  td { color: var(--text-primary); }
+</style>
+</head>
+<body>
+<div class="viz-root" style="width:100%; max-width:860px;">
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>Retirement Income Projection</h1>
+  <p class="sub">Model a sustainable income from a defined contribution pension and an ISA, what tax is payable, how long the money may last, and how it compares with the PLSA Retirement Living Standards. Tax year 2026/27.</p>
+
+  <div class="card">
+    <h2>Your pots</h2>
+    <div class="grid2">
+      <div class="field">
+        <label for="pensionInput">Defined contribution pension (£)</label>
+        <input id="pensionInput" type="number" step="1000" min="0" max="3000000" value="250000">
+        <input id="pensionSlider" type="range" min="0" max="1000000" step="1000" value="250000">
+      </div>
+      <div class="field">
+        <label for="isaInput">ISA (£)</label>
+        <input id="isaInput" type="number" step="1000" min="0" max="2000000" value="100000">
+        <input id="isaSlider" type="range" min="0" max="500000" step="1000" value="100000">
+      </div>
+    </div>
+    <p class="note">The pension figure is assumed to be entirely uncrystallised. 25% of it is treated as a tax-free lump sum; the remaining 75% is taxable when withdrawn as income. ISA withdrawals are always tax-free, whichever way round.</p>
+  </div>
+
+  <div class="card">
+    <h2>You</h2>
+    <div class="grid2">
+      <div class="field">
+        <label for="ageInput">Current age</label>
+        <input id="ageInput" type="number" step="1" min="40" max="90" value="60">
+      </div>
+      <div class="field">
+        <label for="planAgeInput">Plan for income until age</label>
+        <input id="planAgeInput" type="number" step="1" min="70" max="105" value="95">
+      </div>
+    </div>
+    <hr class="sep">
+    <label>Household, for the Retirement Living Standards comparison</label>
+    <div class="radio-row">
+      <label class="radio-opt"><input type="radio" name="household" value="single" checked> Single</label>
+      <label class="radio-opt"><input type="radio" name="household" value="couple"> Couple</label>
+    </div>
+    <hr class="sep">
+    <div class="check-row">
+      <input id="includeSpInput" type="checkbox" checked>
+      <label for="includeSpInput" style="margin:0;">Include State Pension</label>
+    </div>
+    <div class="grid2" style="margin-top:0.75rem;">
+      <div class="field">
+        <label for="spAmountInput">State Pension, total per year (£)</label>
+        <input id="spAmountInput" type="number" step="10" min="0" max="60000" value="12548">
+      </div>
+      <div class="field">
+        <label for="spAgeInput">State Pension age</label>
+        <input id="spAgeInput" type="number" step="1" min="60" max="70" value="67">
+      </div>
+    </div>
+    <div class="check-row">
+      <input id="scottishInput" type="checkbox">
+      <label for="scottishInput" style="margin:0;">Scottish taxpayer (different income tax bands)</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Assumptions</h2>
+    <div class="field">
+      <div class="slider-value"><label for="growthSlider" style="margin:0;">Growth rate, above inflation</label><span class="val" id="growthVal">3.0%/yr</span></div>
+      <input id="growthSlider" type="range" min="-2" max="8" step="0.1" value="3">
+    </div>
+    <div class="field" style="margin-top:1rem;">
+      <div class="slider-value"><label for="withdrawalSlider" style="margin:0;">Withdrawal rate, of today's total pot</label><span class="val" id="withdrawalVal">4.0%/yr</span></div>
+      <input id="withdrawalSlider" type="range" min="1" max="10" step="0.1" value="4">
+    </div>
+    <hr class="sep">
+    <label>Which money is drawn down first</label>
+    <div class="radio-row">
+      <label class="radio-opt"><input type="radio" name="order" value="taxfree-first" checked> Tax-free money first (more tax-efficient)</label>
+      <label class="radio-opt"><input type="radio" name="order" value="proportional"> Proportional across both pots</label>
+    </div>
+    <p class="note">All figures are shown in today's money — the growth rate is a real return, above inflation, so tax bands, the State Pension and the Retirement Living Standards are all held flat throughout rather than inflated. This is a simplifying assumption: it assumes the frozen income tax thresholds keep pace with inflation, which recent UK policy has not done. See the notes below.</p>
+  </div>
+
+  <div class="card" id="headlineCard">
+    <h2>At today's settings</h2>
+    <div class="stats">
+      <div><div class="stat-label">Gross income</div><div class="stat-value" id="statGross">—</div><div class="stat-sub" id="statGrossSub"></div></div>
+      <div><div class="stat-label">Income tax</div><div class="stat-value" id="statTax">—</div><div class="stat-sub" id="statTaxSub"></div></div>
+      <div><div class="stat-label">Net income</div><div class="stat-value" id="statNet">—</div><div class="stat-sub">per year, after tax</div></div>
+      <div><div class="stat-label">Effective tax rate</div><div class="stat-value" id="statRate">—</div><div class="stat-sub">on gross income</div></div>
+    </div>
+    <div class="headline-chip" id="longevityChip"></div>
+  </div>
+
+  <div class="card">
+    <h2>How long the pot lasts</h2>
+    <div class="chart-wrap" id="chart1Wrap">
+      <svg class="chart" id="chart1" viewBox="0 0 800 380" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="tooltip" id="tooltip1"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Income and longevity across withdrawal rates</h2>
+    <div class="chart-wrap" id="chart2Wrap">
+      <svg class="chart" id="chart2" viewBox="0 0 800 380" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="tooltip" id="tooltip2"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Versus the PLSA Retirement Living Standards</h2>
+    <p class="note" style="margin-top:-0.4rem;">Pensions UK (formerly the Pension and Lifetime Savings Association, PLSA) publishes three annual spending levels people say they need for a Minimum, Moderate or Comfortable retirement. These are spending targets, not gross income, so your projected <b>net</b> income at your current age is compared against them directly, in today's money, 2025 figures.</p>
+    <div class="chart-wrap" id="chart3Wrap">
+      <svg class="chart" id="chart3" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="headline-chip" id="plsaChip"></div>
+  </div>
+
+  <div class="card">
+    <button class="table-toggle" id="tableToggle" type="button">Show year-by-year schedule</button>
+    <div class="table-wrap" id="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Age</th>
+            <th>Pot at start of year</th>
+            <th>Withdrawn from pot</th>
+            <th>State Pension</th>
+            <th>Gross income</th>
+            <th>Income tax</th>
+            <th>Net income</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card caveats">
+    <p><b>This is an illustration, not financial or tax advice.</b> It is meant to help you explore the trade-offs between withdrawal rate, longevity and tax, not to replace guidance from a regulated financial adviser, MoneyHelper's free Pension Wise service, or HMRC.</p>
+    <p>Every year's withdrawal is a fixed real amount, set once at the outset as the chosen withdrawal rate multiplied by today's combined pot, and held flat in today's money for as long as the pot lasts (the classic "safe withdrawal rate" approach). It does not adjust for how investments actually perform year to year, and takes no account of sequence-of-returns risk — a run of poor early returns could exhaust the pot sooner than shown here, even at the same average growth rate.</p>
+    <p>25% of the pension pot is assumed to be tax-free cash; the remaining 75%, plus any State Pension once it starts, is taxed as income using 2026/27 Personal Allowance and Income Tax bands (or the Scottish bands, if selected), with the standard high-income taper above £100,000. National Insurance is not charged on pension or ISA income. The Personal Allowance and tax bands are held flat in real terms for this projection; in practice they have been frozen in cash terms in recent years, so in a genuinely static-policy future they would be worth progressively less, and real-world tax could be higher than shown here the further out the projection runs.</p>
+    <p>The State Pension is assumed to increase in line with inflation (a simplification of the triple lock) and so is also held flat in today's money once it starts. The full new State Pension is currently £241.30 a week (about £12,548 a year); your own entitlement depends on your National Insurance record and may differ — check your forecast at gov.uk/check-state-pension.</p>
+    <p>The Retirement Living Standards figures used are Pensions UK's 2025 update, and are national (non-London) figures. They represent annual household spending, not gross income, and don't assume any particular tax treatment.</p>
+  </div>
+</main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Income tax, 2026/27 (same constants as the UK Take-Home Pay tool) ----------
+
+  const RUK_BANDS = [
+    { upto: 37700, rate: 0.20 },
+    { upto: 125140, rate: 0.40 },
+    { upto: Infinity, rate: 0.45 }
+  ];
+  const SCOTLAND_BANDS = [
+    { upto: 3967, rate: 0.19 },
+    { upto: 16956, rate: 0.20 },
+    { upto: 31092, rate: 0.21 },
+    { upto: 62430, rate: 0.42 },
+    { upto: 112570, rate: 0.45 },
+    { upto: Infinity, rate: 0.48 }
+  ];
+  const STANDARD_PA = 12570;
+
+  function taperedAllowance(gross) {
+    if (gross <= 100000) return STANDARD_PA;
+    return Math.max(0, STANDARD_PA - (gross - 100000) / 2);
+  }
+
+  function calcIncomeTaxFromTaxable(taxable, bands) {
+    let tax = 0, prev = 0;
+    for (const band of bands) {
+      const amount = Math.max(0, Math.min(taxable, band.upto) - prev);
+      tax += amount * band.rate;
+      prev = band.upto;
+      if (taxable <= band.upto) break;
+    }
+    return tax;
+  }
+
+  function incomeTax(taxableIncome, scottish) {
+    const allowance = taperedAllowance(taxableIncome);
+    const taxable = Math.max(0, taxableIncome - allowance);
+    return calcIncomeTaxFromTaxable(taxable, scottish ? SCOTLAND_BANDS : RUK_BANDS);
+  }
+
+  // ---------- PLSA Retirement Living Standards, Pensions UK 2025 update ----------
+
+  const PLSA = {
+    single:  { minimum: 13900, moderate: 32700, comfortable: 45400 },
+    couple:  { minimum: 22500, moderate: 45400, comfortable: 62700 }
+  };
+
+  const PROJECTION_END_AGE = 120;
+
+  // ---------- Core projection ----------
+
+  // Runs one year-by-year drawdown. Returns { rows, depletionAge } where depletionAge is
+  // null if the pot is not exhausted by PROJECTION_END_AGE.
+  function project(params) {
+    const { taxFreePot0, taxablePot0, withdrawalRatePct, growthRatePct, currentAge,
+            statePensionAge, statePensionAnnual, includeSp, drawOrder, scottish, endAge } = params;
+
+    const totalPot0 = taxFreePot0 + taxablePot0;
+    const annualTarget = totalPot0 * (withdrawalRatePct / 100);
+    const growth = growthRatePct / 100;
+
+    let taxFree = taxFreePot0;
+    let taxable = taxablePot0;
+    let depletionAge = null;
+    const rows = [];
+    const horizon = Math.min(PROJECTION_END_AGE, Math.max(endAge, currentAge));
+
+    for (let age = currentAge; age <= horizon; age++) {
+      const startTotal = taxFree + taxable;
+      const startTaxFree = taxFree, startTaxable = taxable;
+      if (startTotal <= 0.01) {
+        const sp = includeSp && age >= statePensionAge ? statePensionAnnual : 0;
+        const spTax = incomeTax(sp, scottish);
+        rows.push({ age, startTotal: 0, fromPot: 0, statePension: sp,
+          gross: sp, tax: spTax, net: sp - spTax, endTotal: 0 });
+        continue;
+      }
+
+      const desired = annualTarget;
+      const fromPot = Math.min(desired, startTotal);
+      if (fromPot < desired - 0.005 && depletionAge === null) {
+        depletionAge = age + (desired > 0 ? fromPot / desired : 0);
+      }
+
+      let fromTaxFree, fromTaxable;
+      if (drawOrder === "taxfree-first") {
+        fromTaxFree = Math.min(startTaxFree, fromPot);
+        fromTaxable = fromPot - fromTaxFree;
+      } else {
+        fromTaxFree = startTotal > 0 ? fromPot * (startTaxFree / startTotal) : 0;
+        fromTaxable = fromPot - fromTaxFree;
+      }
+
+      taxFree = startTaxFree - fromTaxFree;
+      taxable = startTaxable - fromTaxable;
+
+      const statePension = includeSp && age >= statePensionAge ? statePensionAnnual : 0;
+      const taxableIncome = fromTaxable + statePension;
+      const tax = incomeTax(taxableIncome, scottish);
+      const gross = fromPot + statePension;
+      const net = gross - tax;
+
+      rows.push({ age, startTotal, fromPot, statePension, gross, tax, net, endTotal: taxFree + taxable });
+
+      taxFree *= (1 + growth);
+      taxable *= (1 + growth);
+    }
+
+    return { rows, depletionAge, annualTarget };
+  }
+
+  // ---------- "Nice" axis scale ----------
+
+  function niceNum(range, round) {
+    if (range === 0) return 1;
+    const exponent = Math.floor(Math.log10(range));
+    const fraction = range / Math.pow(10, exponent);
+    let niceFraction;
+    if (round) {
+      if (fraction < 1.5) niceFraction = 1;
+      else if (fraction < 3) niceFraction = 2;
+      else if (fraction < 7) niceFraction = 5;
+      else niceFraction = 10;
+    } else {
+      if (fraction <= 1) niceFraction = 1;
+      else if (fraction <= 2) niceFraction = 2;
+      else if (fraction <= 5) niceFraction = 5;
+      else niceFraction = 10;
+    }
+    return niceFraction * Math.pow(10, exponent);
+  }
+
+  function niceScale(min, max, maxTicks) {
+    if (max <= min) max = min + 1;
+    const range = niceNum(max - min, false);
+    const step = niceNum(range / (maxTicks - 1), true);
+    const niceMin = Math.floor(min / step) * step;
+    const niceMax = Math.ceil(max / step) * step;
+    const ticks = [];
+    for (let v = niceMin; v <= niceMax + step / 2; v += step) ticks.push(Math.round(v * 1000) / 1000);
+    return { min: niceMin, max: niceMax, step, ticks };
+  }
+
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs) {
+    const e = document.createElementNS(SVG_NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function fmtGBP(n, decimals) {
+    return "£" + Math.round(n).toLocaleString(undefined, { minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0 });
+  }
+
+  // ---------- DOM refs ----------
+
+  const pensionInput = document.getElementById("pensionInput");
+  const pensionSlider = document.getElementById("pensionSlider");
+  const isaInput = document.getElementById("isaInput");
+  const isaSlider = document.getElementById("isaSlider");
+  const ageInput = document.getElementById("ageInput");
+  const planAgeInput = document.getElementById("planAgeInput");
+  const includeSpInput = document.getElementById("includeSpInput");
+  const spAmountInput = document.getElementById("spAmountInput");
+  const spAgeInput = document.getElementById("spAgeInput");
+  const scottishInput = document.getElementById("scottishInput");
+  const growthSlider = document.getElementById("growthSlider");
+  const growthVal = document.getElementById("growthVal");
+  const withdrawalSlider = document.getElementById("withdrawalSlider");
+  const withdrawalVal = document.getElementById("withdrawalVal");
+
+  const statGross = document.getElementById("statGross");
+  const statGrossSub = document.getElementById("statGrossSub");
+  const statTax = document.getElementById("statTax");
+  const statTaxSub = document.getElementById("statTaxSub");
+  const statNet = document.getElementById("statNet");
+  const statRate = document.getElementById("statRate");
+  const longevityChip = document.getElementById("longevityChip");
+  const plsaChip = document.getElementById("plsaChip");
+
+  const tableToggle = document.getElementById("tableToggle");
+  const tableWrap = document.getElementById("tableWrap");
+  const tableBody = document.getElementById("tableBody");
+
+  function household() {
+    const r = document.querySelector('input[name="household"]:checked');
+    return r ? r.value : "single";
+  }
+  function drawOrder() {
+    const r = document.querySelector('input[name="order"]:checked');
+    return r ? r.value : "taxfree-first";
+  }
+
+  // Keep the State Pension amount field sensible when household toggles, unless the user
+  // has clearly set a custom value already close to the other default.
+  const SP_SINGLE_DEFAULT = 12548;
+  const SP_COUPLE_DEFAULT = 25096;
+  document.querySelectorAll('input[name="household"]').forEach(r => {
+    r.addEventListener("change", () => {
+      const cur = parseFloat(spAmountInput.value) || 0;
+      if (Math.abs(cur - SP_SINGLE_DEFAULT) < 1 || Math.abs(cur - SP_COUPLE_DEFAULT) < 1) {
+        spAmountInput.value = household() === "couple" ? SP_COUPLE_DEFAULT : SP_SINGLE_DEFAULT;
+      }
+      render();
+    });
+  });
+
+  function readInputs() {
+    const pensionPot = Math.max(0, parseFloat(pensionInput.value) || 0);
+    const isaPot = Math.max(0, parseFloat(isaInput.value) || 0);
+    const currentAge = Math.max(18, Math.min(110, parseFloat(ageInput.value) || 60));
+    const planAge = Math.max(currentAge + 1, Math.min(120, parseFloat(planAgeInput.value) || 95));
+    const includeSp = includeSpInput.checked;
+    const spAmount = Math.max(0, parseFloat(spAmountInput.value) || 0);
+    const spAge = Math.max(50, Math.min(80, parseFloat(spAgeInput.value) || 67));
+    const scottish = scottishInput.checked;
+    const growthRate = parseFloat(growthSlider.value);
+    const withdrawalRate = parseFloat(withdrawalSlider.value);
+    const order = drawOrder();
+    const hh = household();
+
+    const taxFreePot0 = isaPot + 0.25 * pensionPot;
+    const taxablePot0 = 0.75 * pensionPot;
+
+    return { pensionPot, isaPot, currentAge, planAge, includeSp, spAmount, spAge, scottish,
+      growthRate, withdrawalRate, order, hh, taxFreePot0, taxablePot0 };
+  }
+
+  let lastMain = null;
+  let lastSweep = null;
+
+  function render() {
+    growthVal.textContent = parseFloat(growthSlider.value).toFixed(1) + "%/yr";
+    withdrawalVal.textContent = parseFloat(withdrawalSlider.value).toFixed(1) + "%/yr";
+
+    pensionSlider.value = Math.min(parseFloat(pensionSlider.max), parseFloat(pensionInput.value) || 0);
+    isaSlider.value = Math.min(parseFloat(isaSlider.max), parseFloat(isaInput.value) || 0);
+
+    const inp = readInputs();
+
+    const main = project({
+      taxFreePot0: inp.taxFreePot0, taxablePot0: inp.taxablePot0,
+      withdrawalRatePct: inp.withdrawalRate, growthRatePct: inp.growthRate,
+      currentAge: inp.currentAge, statePensionAge: inp.spAge, statePensionAnnual: inp.spAmount,
+      includeSp: inp.includeSp, drawOrder: inp.order, scottish: inp.scottish,
+      endAge: Math.max(inp.planAge, inp.currentAge + 1)
+    });
+    lastMain = { main, inp };
+
+    renderHeadline(main, inp);
+    renderChart1(main, inp);
+    renderChart2(inp);
+    renderChart3(main, inp);
+    renderTable(main);
+  }
+
+  function renderHeadline(main, inp) {
+    const first = main.rows[0];
+    if (!first) return;
+    statGross.textContent = fmtGBP(first.gross);
+    statGrossSub.textContent = inp.includeSp && inp.currentAge < inp.spAge
+      ? "excludes State Pension (starts age " + inp.spAge + ")"
+      : (inp.includeSp ? "includes State Pension" : "State Pension not included");
+    statTax.textContent = fmtGBP(first.tax);
+    statTaxSub.textContent = "per year, at age " + inp.currentAge;
+    statNet.textContent = fmtGBP(first.net);
+    const rate = first.gross > 0 ? (first.tax / first.gross) * 100 : 0;
+    statRate.textContent = (Math.round(rate * 10) / 10) + "%";
+
+    let chipHtml, chipClass;
+    if (main.depletionAge === null) {
+      chipClass = "good";
+      chipHtml = "At a <b>" + inp.withdrawalRate.toFixed(1) + "%</b> withdrawal rate, the combined pot is not projected to run out before age " + PROJECTION_END_AGE + ".";
+    } else {
+      const ageWhole = Math.floor(main.depletionAge);
+      const yearsLeft = Math.round((main.depletionAge - inp.currentAge) * 10) / 10;
+      chipClass = main.depletionAge < inp.planAge ? "bad" : "good";
+      chipHtml = "At a <b>" + inp.withdrawalRate.toFixed(1) + "%</b> withdrawal rate, the combined pot is projected to run out around age <b>" +
+        ageWhole + "</b> &mdash; about " + yearsLeft + " years from now" +
+        (main.depletionAge < inp.planAge ? ", before your plan-to age of " + inp.planAge + "." : ", at or after your plan-to age of " + inp.planAge + ".");
+    }
+    longevityChip.className = "headline-chip " + chipClass;
+    longevityChip.innerHTML = chipHtml;
+  }
+
+  // ---- Chart 1: pot balance over time ----
+
+  function renderChart1(main, inp) {
+    const svg = document.getElementById("chart1");
+    const tooltip = document.getElementById("tooltip1");
+    const wrap = document.getElementById("chart1Wrap");
+    const W = 800, H = 380;
+    const MARGIN = { top: 40, right: 30, bottom: 40, left: 82 };
+    const plotW = W - MARGIN.left - MARGIN.right;
+    const plotH = H - MARGIN.top - MARGIN.bottom;
+
+    const rows = main.rows;
+    const maxBalance = Math.max.apply(null, rows.map(r => r.startTotal));
+    const yS = niceScale(0, maxBalance, 6);
+    const minAge = rows[0].age, maxAge = rows[rows.length - 1].age;
+
+    const xScale = age => MARGIN.left + ((age - minAge) / Math.max(1, (maxAge - minAge))) * plotW;
+    const yScale = v => MARGIN.top + plotH - (v / (yS.max || 1)) * plotH;
+
+    svg.innerHTML = "";
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+
+    yS.ticks.forEach(t => {
+      if (t > yS.max) return;
+      const y = yScale(t);
+      svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: y, y2: y, class: "gridline" }));
+      const label = el("text", { x: MARGIN.left - 10, y: y + 4, class: "tick-label", "text-anchor": "end" });
+      label.textContent = "£" + Math.round(t).toLocaleString();
+      svg.appendChild(label);
+    });
+
+    const xTicks = 6;
+    for (let i = 0; i < xTicks; i++) {
+      const age = Math.round(minAge + ((maxAge - minAge) * i) / (xTicks - 1));
+      const x = xScale(age);
+      const label = el("text", { x, y: MARGIN.top + plotH + 22, class: "tick-label", "text-anchor": i === 0 ? "start" : (i === xTicks - 1 ? "end" : "middle") });
+      label.textContent = "Age " + age;
+      svg.appendChild(label);
+    }
+
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "axis-line" }));
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: MARGIN.top + plotH, y2: MARGIN.top + plotH, class: "axis-line" }));
+
+    const title = el("text", { x: MARGIN.left, y: 18, class: "axis-title" });
+    title.textContent = "Remaining pot (£, today's money)";
+    svg.appendChild(title);
+
+    // Plan-to-age reference line
+    if (inp.planAge >= minAge && inp.planAge <= maxAge) {
+      const rx = xScale(inp.planAge);
+      svg.appendChild(el("line", { x1: rx, x2: rx, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "ref-line" }));
+      const rl = el("text", { x: rx + 4, y: MARGIN.top + 12, class: "tick-label" });
+      rl.textContent = "Plan-to age " + inp.planAge;
+      svg.appendChild(rl);
+    }
+
+    const areaPath = "M" + xScale(rows[0].age) + "," + yScale(0) + " " +
+      rows.map(r => "L" + xScale(r.age).toFixed(2) + "," + yScale(r.startTotal).toFixed(2)).join(" ") +
+      " L" + xScale(rows[rows.length - 1].age).toFixed(2) + "," + yScale(0) + " Z";
+    svg.appendChild(el("path", { d: areaPath, fill: "var(--series-1)", class: "area-fill" }));
+
+    const linePath = rows.map((r, i) => (i === 0 ? "M" : "L") + xScale(r.age).toFixed(2) + "," + yScale(r.startTotal).toFixed(2)).join(" ");
+    svg.appendChild(el("path", { d: linePath, class: "series-line", stroke: "var(--series-1)" }));
+
+    if (main.depletionAge !== null) {
+      const dx = xScale(Math.min(main.depletionAge, maxAge));
+      svg.appendChild(el("circle", { cx: dx, cy: yScale(0), r: 4.5, fill: "var(--bad)" }));
+    }
+
+    const crosshair = el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "crosshair", visibility: "hidden" });
+    svg.appendChild(crosshair);
+    const hitRect = el("rect", { x: MARGIN.left, y: MARGIN.top, width: plotW, height: plotH, fill: "transparent" });
+    svg.appendChild(hitRect);
+
+    hitRect.addEventListener("pointermove", evt => {
+      const rect = svg.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const xInViewBox = (evt.clientX - rect.left) * scaleX;
+      const frac = Math.min(1, Math.max(0, (xInViewBox - MARGIN.left) / plotW));
+      const idx = Math.round(frac * (rows.length - 1));
+      const r = rows[idx];
+      const x = xScale(r.age);
+      crosshair.setAttribute("x1", x); crosshair.setAttribute("x2", x); crosshair.setAttribute("visibility", "visible");
+
+      tooltip.innerHTML = "";
+      const head = document.createElement("div"); head.className = "t-head"; head.textContent = "Age " + r.age; tooltip.appendChild(head);
+      function row(color, label, value) {
+        const rr = document.createElement("div"); rr.className = "t-row";
+        const k = document.createElement("span"); k.className = "key"; k.style.background = color; rr.appendChild(k);
+        const l = document.createElement("span"); l.textContent = label; rr.appendChild(l);
+        const v = document.createElement("span"); v.className = "val"; v.textContent = value; rr.appendChild(v);
+        tooltip.appendChild(rr);
+      }
+      row("var(--series-1)", "Pot balance", fmtGBP(r.startTotal));
+      row("transparent", "Net income that year", fmtGBP(r.net));
+
+      const scaleFactor = rect.width / W;
+      const wrapRect = wrap.getBoundingClientRect();
+      const tipX = (x * scaleFactor) + (rect.left - wrapRect.left);
+      const left = Math.min(Math.max(tipX + 12, 0), wrap.clientWidth - 180);
+      tooltip.style.left = left + "px";
+      tooltip.style.top = "8px";
+      tooltip.classList.add("show");
+    });
+    hitRect.addEventListener("pointerleave", () => { tooltip.classList.remove("show"); crosshair.setAttribute("visibility", "hidden"); });
+  }
+
+  // ---- Chart 2: income & longevity vs withdrawal rate ----
+
+  function renderChart2(inp) {
+    const svg = document.getElementById("chart2");
+    const tooltip = document.getElementById("tooltip2");
+    const wrap = document.getElementById("chart2Wrap");
+    const W = 800, H = 380;
+    const MARGIN = { top: 56, right: 78, bottom: 40, left: 82 };
+    const plotW = W - MARGIN.left - MARGIN.right;
+    const plotH = H - MARGIN.top - MARGIN.bottom;
+
+    const RATE_MIN = 1, RATE_MAX = 10, N = 37;
+    const points = [];
+    const capYears = PROJECTION_END_AGE - inp.currentAge;
+    for (let i = 0; i < N; i++) {
+      const rate = RATE_MIN + ((RATE_MAX - RATE_MIN) * i) / (N - 1);
+      const p = project({
+        taxFreePot0: inp.taxFreePot0, taxablePot0: inp.taxablePot0,
+        withdrawalRatePct: rate, growthRatePct: inp.growthRate,
+        currentAge: inp.currentAge, statePensionAge: inp.spAge, statePensionAnnual: inp.spAmount,
+        includeSp: inp.includeSp, drawOrder: inp.order, scottish: inp.scottish,
+        endAge: PROJECTION_END_AGE
+      });
+      const first = p.rows[0];
+      const years = p.depletionAge === null ? capYears : Math.max(0, p.depletionAge - inp.currentAge);
+      points.push({ rate, gross: first.gross, net: first.net, years, lasts: p.depletionAge === null });
+    }
+    lastSweep = points;
+
+    const maxIncome = Math.max.apply(null, points.map(p => p.gross));
+    const yLeft = niceScale(0, maxIncome, 6);
+    const yRight = niceScale(0, capYears, 6);
+
+    const xScale = v => MARGIN.left + ((v - RATE_MIN) / (RATE_MAX - RATE_MIN)) * plotW;
+    const yL = v => MARGIN.top + plotH - (v / (yLeft.max || 1)) * plotH;
+    const yR = v => MARGIN.top + plotH - (v / (yRight.max || 1)) * plotH;
+
+    svg.innerHTML = "";
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+
+    yLeft.ticks.forEach(t => {
+      if (t > yLeft.max) return;
+      const y = yL(t);
+      svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: y, y2: y, class: "gridline" }));
+      const label = el("text", { x: MARGIN.left - 10, y: y + 4, class: "tick-label", "text-anchor": "end" });
+      label.textContent = "£" + Math.round(t).toLocaleString();
+      svg.appendChild(label);
+    });
+    yRight.ticks.forEach(t => {
+      if (t > yRight.max) return;
+      const y = yR(t);
+      const label = el("text", { x: MARGIN.left + plotW + 10, y: y + 4, class: "tick-label" });
+      label.textContent = Math.round(t) + "y";
+      svg.appendChild(label);
+    });
+
+    const xTicks = 9;
+    for (let i = 0; i < xTicks; i++) {
+      const v = RATE_MIN + ((RATE_MAX - RATE_MIN) * i) / (xTicks - 1);
+      const x = xScale(v);
+      const label = el("text", { x, y: MARGIN.top + plotH + 22, class: "tick-label", "text-anchor": i === 0 ? "start" : (i === xTicks - 1 ? "end" : "middle") });
+      label.textContent = v.toFixed(1) + "%";
+      svg.appendChild(label);
+    }
+
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "axis-line" }));
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: MARGIN.top + plotH, y2: MARGIN.top + plotH, class: "axis-line" }));
+
+    const sw1 = el("line", { x1: MARGIN.left - 60, x2: MARGIN.left - 44, y1: 18, y2: 18, stroke: "var(--series-1)", "stroke-width": 2 });
+    svg.appendChild(sw1);
+    const t1 = el("text", { x: MARGIN.left - 38, y: 22, class: "axis-title" }); t1.textContent = "Gross income (left)"; svg.appendChild(t1);
+
+    const sw1b = el("line", { x1: MARGIN.left - 60, x2: MARGIN.left - 44, y1: 34, y2: 34, stroke: "var(--series-2)", "stroke-width": 2 });
+    svg.appendChild(sw1b);
+    const t1b = el("text", { x: MARGIN.left - 38, y: 38, class: "axis-title" }); t1b.textContent = "Net income (left)"; svg.appendChild(t1b);
+
+    const t2 = el("text", { x: W - 10, y: 22, class: "axis-title", "text-anchor": "end" }); t2.textContent = "Years pot lasts (right)"; svg.appendChild(t2);
+    const t2w = t2.getBBox().width;
+    const sw2 = el("line", { x1: W - 10 - t2w - 20, x2: W - 10 - t2w - 4, y1: 18, y2: 18, stroke: "var(--series-3)", "stroke-width": 2 });
+    svg.appendChild(sw2);
+
+    const pathGross = points.map((p, i) => (i === 0 ? "M" : "L") + xScale(p.rate).toFixed(2) + "," + yL(p.gross).toFixed(2)).join(" ");
+    const pathNet = points.map((p, i) => (i === 0 ? "M" : "L") + xScale(p.rate).toFixed(2) + "," + yL(p.net).toFixed(2)).join(" ");
+    const pathYears = points.map((p, i) => (i === 0 ? "M" : "L") + xScale(p.rate).toFixed(2) + "," + yR(p.years).toFixed(2)).join(" ");
+    svg.appendChild(el("path", { d: pathGross, class: "series-line", stroke: "var(--series-1)" }));
+    svg.appendChild(el("path", { d: pathNet, class: "series-line", stroke: "var(--series-2)" }));
+    svg.appendChild(el("path", { d: pathYears, class: "series-line", stroke: "var(--series-3)", "stroke-dasharray": "5 3" }));
+
+    // Marker for the currently selected withdrawal rate
+    const curX = xScale(Math.min(RATE_MAX, Math.max(RATE_MIN, inp.withdrawalRate)));
+    svg.appendChild(el("line", { x1: curX, x2: curX, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "ref-line" }));
+
+    const crosshair = el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "crosshair", visibility: "hidden" });
+    svg.appendChild(crosshair);
+    const hitRect = el("rect", { x: MARGIN.left, y: MARGIN.top, width: plotW, height: plotH, fill: "transparent" });
+    svg.appendChild(hitRect);
+
+    hitRect.addEventListener("pointermove", evt => {
+      const rect = svg.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const xInViewBox = (evt.clientX - rect.left) * scaleX;
+      const frac = Math.min(1, Math.max(0, (xInViewBox - MARGIN.left) / plotW));
+      const idx = Math.round(frac * (points.length - 1));
+      const p = points[idx];
+      const x = xScale(p.rate);
+      crosshair.setAttribute("x1", x); crosshair.setAttribute("x2", x); crosshair.setAttribute("visibility", "visible");
+
+      tooltip.innerHTML = "";
+      const head = document.createElement("div"); head.className = "t-head"; head.textContent = p.rate.toFixed(1) + "% withdrawal rate"; tooltip.appendChild(head);
+      function row(color, label, value) {
+        const rr = document.createElement("div"); rr.className = "t-row";
+        const k = document.createElement("span"); k.className = "key"; k.style.background = color; rr.appendChild(k);
+        const l = document.createElement("span"); l.textContent = label; rr.appendChild(l);
+        const v = document.createElement("span"); v.className = "val"; v.textContent = value; rr.appendChild(v);
+        tooltip.appendChild(rr);
+      }
+      row("var(--series-1)", "Gross income", fmtGBP(p.gross));
+      row("var(--series-2)", "Net income", fmtGBP(p.net));
+      row("var(--series-3)", "Lasts", p.lasts ? (Math.round(p.years) + "y+ (beyond age " + PROJECTION_END_AGE + ")") : (Math.round(p.years * 10) / 10 + " years"));
+
+      const scaleFactor = rect.width / W;
+      const wrapRect = wrap.getBoundingClientRect();
+      const tipX = (x * scaleFactor) + (rect.left - wrapRect.left);
+      const left = Math.min(Math.max(tipX + 12, 0), wrap.clientWidth - 190);
+      tooltip.style.left = left + "px";
+      tooltip.style.top = "8px";
+      tooltip.classList.add("show");
+    });
+    hitRect.addEventListener("pointerleave", () => { tooltip.classList.remove("show"); crosshair.setAttribute("visibility", "hidden"); });
+  }
+
+  // ---- Chart 3: PLSA comparison bar chart ----
+
+  function renderChart3(main, inp) {
+    const svg = document.getElementById("chart3");
+    const W = 800, H = 300;
+    const MARGIN = { top: 30, right: 20, bottom: 50, left: 82 };
+    const plotW = W - MARGIN.left - MARGIN.right;
+    const plotH = H - MARGIN.top - MARGIN.bottom;
+
+    const std = PLSA[inp.hh];
+    const yourNet = main.rows[0].net;
+    const bars = [
+      { label: "Minimum", value: std.minimum, color: "var(--bar-min)" },
+      { label: "Moderate", value: std.moderate, color: "var(--bar-mod)" },
+      { label: "Comfortable", value: std.comfortable, color: "var(--bar-comf)" },
+      { label: "Your net income", value: yourNet, color: "var(--accent)" }
+    ];
+
+    const maxVal = Math.max.apply(null, bars.map(b => b.value));
+    const yS = niceScale(0, maxVal, 6);
+    const yScale = v => MARGIN.top + plotH - (v / (yS.max || 1)) * plotH;
+
+    svg.innerHTML = "";
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+
+    yS.ticks.forEach(t => {
+      if (t > yS.max) return;
+      const y = yScale(t);
+      svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: y, y2: y, class: "gridline" }));
+      const label = el("text", { x: MARGIN.left - 10, y: y + 4, class: "tick-label", "text-anchor": "end" });
+      label.textContent = "£" + Math.round(t).toLocaleString();
+      svg.appendChild(label);
+    });
+
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "axis-line" }));
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: MARGIN.top + plotH, y2: MARGIN.top + plotH, class: "axis-line" }));
+
+    const bandW = plotW / bars.length;
+    const barW = bandW * 0.5;
+    bars.forEach((b, i) => {
+      const cx = MARGIN.left + bandW * (i + 0.5);
+      const y = yScale(b.value);
+      const h = (MARGIN.top + plotH) - y;
+      svg.appendChild(el("rect", { x: cx - barW / 2, y, width: barW, height: Math.max(0, h), fill: b.color, rx: 4 }));
+      const vlabel = el("text", { x: cx, y: y - 8, class: "tick-label", "text-anchor": "middle" });
+      vlabel.textContent = fmtGBP(b.value);
+      svg.appendChild(vlabel);
+      const llabel = el("text", { x: cx, y: MARGIN.top + plotH + 20, class: "tick-label", "text-anchor": "middle" });
+      llabel.textContent = b.label;
+      svg.appendChild(llabel);
+    });
+
+    let met = "below the Minimum";
+    if (yourNet >= std.comfortable) met = "at or above the Comfortable";
+    else if (yourNet >= std.moderate) met = "at or above the Moderate";
+    else if (yourNet >= std.minimum) met = "at or above the Minimum";
+
+    const spNote = inp.includeSp && inp.currentAge < inp.spAge
+      ? " This does not yet include the State Pension, which starts at age " + inp.spAge + "."
+      : "";
+    plsaChip.className = "headline-chip " + (yourNet >= std.moderate ? "good" : (yourNet >= std.minimum ? "" : "bad"));
+    plsaChip.innerHTML = "Your projected net income of <b>" + fmtGBP(yourNet) + "</b> a year is " + met +
+      " standard for a " + inp.hh + " household (" + fmtGBP(std.minimum) + " / " + fmtGBP(std.moderate) + " / " + fmtGBP(std.comfortable) + ")." + spNote;
+  }
+
+  function renderTable(main) {
+    let html = "";
+    main.rows.forEach(r => {
+      html += "<tr>" +
+        "<td>" + r.age + "</td>" +
+        "<td>" + fmtGBP(r.startTotal) + "</td>" +
+        "<td>" + fmtGBP(r.fromPot) + "</td>" +
+        "<td>" + fmtGBP(r.statePension) + "</td>" +
+        "<td>" + fmtGBP(r.gross) + "</td>" +
+        "<td>" + fmtGBP(r.tax) + "</td>" +
+        "<td>" + fmtGBP(r.net) + "</td>" +
+        "</tr>";
+    });
+    tableBody.innerHTML = html;
+  }
+
+  // ---------- Events ----------
+
+  [pensionInput, isaInput, ageInput, planAgeInput, spAmountInput, spAgeInput].forEach(i => i.addEventListener("input", render));
+  pensionSlider.addEventListener("input", () => { pensionInput.value = pensionSlider.value; render(); });
+  isaSlider.addEventListener("input", () => { isaInput.value = isaSlider.value; render(); });
+  includeSpInput.addEventListener("change", render);
+  scottishInput.addEventListener("change", render);
+  growthSlider.addEventListener("input", render);
+  withdrawalSlider.addEventListener("input", render);
+  document.querySelectorAll('input[name="order"]').forEach(r => r.addEventListener("change", render));
+  document.querySelectorAll('input[name="household"]').forEach(r => r.addEventListener("change", render));
+
+  tableToggle.addEventListener("click", () => {
+    const showing = tableWrap.classList.toggle("show");
+    tableToggle.textContent = showing ? "Hide year-by-year schedule" : "Show year-by-year schedule";
+  });
+
+  ["chart1Wrap", "chart2Wrap"].forEach(id => {
+    const wrap = document.getElementById(id);
+    let lastWidth = wrap.clientWidth;
+    let timer;
+    const ro = new ResizeObserver(() => {
+      if (wrap.clientWidth === lastWidth) return;
+      lastWidth = wrap.clientWidth;
+      clearTimeout(timer);
+      timer = setTimeout(render, 100);
+    });
+    ro.observe(wrap);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
