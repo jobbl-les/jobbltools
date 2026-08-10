@@ -417,21 +417,26 @@
     laborterm: "Labor Term",
     partsterm: "Parts Term",
     careplusflag: "Samsung Care+",
+    modelcode: "Model Code",
+    modelname: "Model",
     warrantyurl: "Warranty Info",
     careplusc310url: "Care+ (Home Appliances)",
     careplusc370url: "Care+ Info",
     careplusiconflg: "Care+ Icon",
-    lfdblockflg: "LFD Block"
+    lfdblockflg: "LFD Block",
+    recalledflag: "Recalled"
   };
   const PRIORITY_ORDER = [
-    "serial", "imei", "model", "modelname", "devicename", "inwarranty",
-    "warrantytype", "purchasedate", "warrantydate", "disputestatus",
-    "disputewtydate", "laborterm", "partsterm", "careplusflag"
+    "serial", "imei", "model", "modelname", "modelcode", "devicename",
+    "inwarranty", "warrantytype", "purchasedate", "warrantydate",
+    "disputestatus", "disputewtydate", "laborterm", "partsterm", "careplusflag"
   ];
   // Only "in warranty" gets good/bad coloring — it's the one boolean where
   // false is unambiguously the worse outcome. Others (Care+ enrollment,
   // internal flags, etc.) are just informational, so they stay neutral.
   const POSITIVE_BOOLEAN_KEYS = ["inwarranty"];
+  // The one boolean where true, not false, is the alarming value.
+  const NEGATIVE_BOOLEAN_KEYS = ["recalledflag"];
 
   function prettifyKey(key) {
     const lower = key.toLowerCase();
@@ -459,14 +464,30 @@
     return typeof value === "string" && URL_RE.test(value) && (IMAGE_EXT_RE.test(value) || IMAGE_KEY_RE.test(key));
   }
 
+  // Samsung's own API mixes absolute URLs with root-relative ones (e.g.
+  // "consumerUrl": "/us/mobile/phones/..."). This endpoint is always
+  // samsung.com, so a "*Url" field starting with "/" can be resolved
+  // against it rather than shown as unclickable text.
+  function resolveRelativeUrl(key, value) {
+    if (/url$/i.test(key) && value.charAt(0) === "/") {
+      return "https://www.samsung.com" + value;
+    }
+    return null;
+  }
+
   function tryParseDate(key, value) {
     if (!DATE_KEY_RE.test(key)) return null;
     let d = null;
     if (typeof value === "number" && value > 0) {
       d = new Date(value > 1e12 ? value : value * 1000);
     } else if (typeof value === "string" && value.trim() !== "") {
-      const parsed = Date.parse(value);
-      if (!Number.isNaN(parsed)) d = new Date(parsed);
+      const bareYmd = value.match(/^(\d{4})(\d{2})(\d{2})$/); // Samsung's own format, e.g. "20250210"
+      if (bareYmd) {
+        d = new Date(Number(bareYmd[1]), Number(bareYmd[2]) - 1, Number(bareYmd[3]));
+      } else {
+        const parsed = Date.parse(value);
+        if (!Number.isNaN(parsed)) d = new Date(parsed);
+      }
     }
     return (d && !Number.isNaN(d.getTime())) ? d : null;
   }
@@ -480,9 +501,11 @@
 
   function renderBoolean(key, value) {
     const lower = key.toLowerCase();
-    const isPositiveKind = POSITIVE_BOOLEAN_KEYS.includes(lower);
+    let cls = "neutral";
+    if (POSITIVE_BOOLEAN_KEYS.includes(lower)) cls = value ? "good" : "bad";
+    else if (NEGATIVE_BOOLEAN_KEYS.includes(lower)) cls = value ? "bad" : "neutral";
     const span = document.createElement("span");
-    span.className = "badge " + (isPositiveKind ? (value ? "good" : "bad") : "neutral");
+    span.className = "badge " + cls;
     span.textContent = value ? "Yes" : "No";
     return span;
   }
@@ -579,13 +602,14 @@
       if (looksLikeImageUrl(key, value)) {
         return renderImage(value);
       }
-      if (URL_RE.test(value)) {
+      const relativeHref = resolveRelativeUrl(key, value);
+      if (URL_RE.test(value) || relativeHref) {
         const a = document.createElement("a");
-        a.href = value;
+        a.href = relativeHref || value;
         a.target = "_blank";
         a.rel = "noopener noreferrer";
         a.className = "link";
-        a.textContent = value;
+        a.textContent = value; // show exactly what Samsung returned
         return a;
       }
       const date = tryParseDate(key, value);
