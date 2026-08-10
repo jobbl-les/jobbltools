@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Samsung Warranty Checker — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --surface: #fcfcfb;
+    --border: #ddd;
+    --accent: #2563eb;
+    --good: #16a34a;
+    --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --surface: #1a1a19;
+      --border: #333;
+      --accent: #60a5fa;
+      --good: #4ade80;
+      --bad: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main { width: 100%; max-width: 640px; }
+  a.back { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 1.4rem; margin: 0.75rem 0 0.3rem; }
+  p.sub { color: var(--muted); font-size: 0.9rem; margin-top: 0; margin-bottom: 1.25rem; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .input-row {
+    display: flex;
+    gap: 0.6rem;
+  }
+  input#imei {
+    flex: 1 1 auto;
+    padding: 0.7rem 0.8rem;
+    font-size: 1.1rem;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--fg);
+    min-width: 0;
+  }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+  button.primary {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1.1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    flex: 0 0 auto;
+  }
+  button.primary:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  button.ghost {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  button.ghost:disabled { opacity: 0.6; cursor: default; }
+
+  .hint {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    min-height: 1.1em;
+  }
+  .status-line {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.6rem;
+    min-height: 1.1em;
+  }
+  .status-line.warn { color: var(--bad); }
+
+  .result-card, .error-card { display: none; }
+  .result-card.show, .error-card.show { display: block; }
+  .error-card { border-color: var(--bad); }
+  .error-card p { margin: 0; font-size: 0.9rem; }
+
+  .headline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+  }
+  .headline-badge.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+  .headline-badge.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+
+  .kv-table.nested {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    margin-top: 0.3rem;
+  }
+  .kv-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .kv-row:last-child { border-bottom: none; }
+  .kv-key { color: var(--muted); flex: 0 0 auto; padding-top: 0.1rem; }
+  .kv-value {
+    color: var(--fg);
+    text-align: right;
+    word-break: break-word;
+    flex: 1 1 auto;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+  }
+  .badge.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+  .badge.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+  .badge.neutral { background: var(--border); color: var(--fg); }
+
+  .v-empty { color: var(--muted); }
+  a.link { color: var(--accent); text-decoration: none; word-break: break-all; }
+  a.link:hover { text-decoration: underline; }
+
+  .nested-list { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+  .nested-item { text-align: left; }
+  .nested-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.2rem; }
+
+  .image-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+  }
+  img.product-image {
+    max-width: 100%;
+    max-height: 220px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+  }
+  button.small { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
+
+  details.raw { margin-top: 0.5rem; }
+  details.raw summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  pre.raw-json, pre.raw-fallback {
+    margin-top: 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem;
+    font-size: 0.78rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  p.caveats {
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>Samsung Warranty Checker</h1>
+  <p class="sub">Enter a device's IMEI to look up its Samsung warranty status, straight from Samsung's own support lookup.</p>
+
+  <div class="card">
+    <label for="imei">IMEI</label>
+    <div class="input-row">
+      <input id="imei" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 356725111234565" maxlength="17">
+      <button class="primary" id="checkBtn" type="button" disabled>Check warranty</button>
+    </div>
+    <div class="hint" id="hint">Usually 15 digits.</div>
+    <div class="status-line" id="status"></div>
+  </div>
+
+  <div class="card result-card" id="resultCard">
+    <div id="headline"></div>
+    <div id="fields"></div>
+    <details class="raw" id="rawDetails">
+      <summary>Raw JSON response</summary>
+      <pre class="raw-json" id="rawJson"></pre>
+    </details>
+  </div>
+
+  <div class="card error-card" id="errorCard">
+    <p id="errorText"></p>
+  </div>
+
+  <p class="caveats">
+    Your browser calls Samsung's public warranty lookup
+    (<code>pages.samsung.com/support-api/.../products/warranty</code>) directly — the IMEI you enter goes straight
+    from your browser to Samsung, nothing passes through this site or is stored anywhere. This is an unofficial
+    tool, not made or endorsed by Samsung; the endpoint is undocumented and can change or disappear without
+    notice, which is why every field below is rendered generically rather than assuming a fixed shape — anything
+    Samsung's response contains will show up, known fields just get friendlier labels. Results are only as
+    accurate as Samsung's own records.
+  </p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  const API_BASE = "https://pages.samsung.com/support-api/us/user/guest/products/warranty?serial=";
+
+  const imeiInput = document.getElementById("imei");
+  const hint = document.getElementById("hint");
+  const checkBtn = document.getElementById("checkBtn");
+  const statusEl = document.getElementById("status");
+  const resultCard = document.getElementById("resultCard");
+  const headlineEl = document.getElementById("headline");
+  const fieldsEl = document.getElementById("fields");
+  const rawJsonEl = document.getElementById("rawJson");
+  const rawDetails = document.getElementById("rawDetails");
+  const errorCard = document.getElementById("errorCard");
+  const errorText = document.getElementById("errorText");
+
+  // ---------- Input handling ----------
+
+  function luhnValid(digits15) {
+    const nums = digits15.split("").map(Number);
+    const given = nums.pop();
+    let sum = 0;
+    nums.reverse().forEach((d, i) => {
+      if (i % 2 === 0) { d *= 2; if (d > 9) d -= 9; }
+      sum += d;
+    });
+    return (10 - (sum % 10)) % 10 === given;
+  }
+
+  function sanitizeInput() {
+    const digits = imeiInput.value.replace(/\D/g, "").slice(0, 17);
+    if (imeiInput.value !== digits) {
+      const pos = imeiInput.selectionStart;
+      imeiInput.value = digits;
+      imeiInput.setSelectionRange(pos, pos);
+    }
+    updateHint();
+  }
+
+  function updateHint() {
+    const digits = imeiInput.value;
+    if (!digits) {
+      hint.textContent = "Usually 15 digits.";
+      checkBtn.disabled = true;
+      return;
+    }
+    if (digits.length < 14) {
+      hint.textContent = digits.length + "/15 digits";
+      checkBtn.disabled = true;
+      return;
+    }
+    if (digits.length === 15) {
+      hint.textContent = luhnValid(digits)
+        ? "Looks like a valid IMEI."
+        : "15 digits, but the check digit doesn't match a standard IMEI — you can still try it.";
+    } else {
+      hint.textContent = digits.length + " digits entered.";
+    }
+    checkBtn.disabled = false;
+  }
+
+  imeiInput.addEventListener("input", sanitizeInput);
+  imeiInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !checkBtn.disabled) checkWarranty();
+  });
+  checkBtn.addEventListener("click", checkWarranty);
+
+  // ---------- Lookup ----------
+
+  async function checkWarranty() {
+    const imei = imeiInput.value;
+    resultCard.classList.remove("show");
+    errorCard.classList.remove("show");
+    errorText.textContent = "";
+    Array.from(errorCard.querySelectorAll("pre.raw-fallback")).forEach(el => el.remove());
+    statusEl.textContent = "Checking…";
+    statusEl.className = "status-line";
+    checkBtn.disabled = true;
+
+    let res;
+    try {
+      res = await fetch(API_BASE + encodeURIComponent(imei));
+    } catch (err) {
+      showError("Couldn't reach Samsung's servers. This can happen if you're offline, or a privacy extension / firewall is blocking the cross-site request.");
+      updateHint();
+      return;
+    }
+
+    let text;
+    try {
+      text = await res.text();
+    } catch (err) {
+      showError("Samsung's server closed the connection before sending a full response.");
+      updateHint();
+      return;
+    }
+
+    let data;
+    try {
+      data = text.trim() === "" ? {} : JSON.parse(text);
+    } catch (err) {
+      statusEl.textContent = "";
+      showRawFallback(text, res.status);
+      updateHint();
+      return;
+    }
+
+    statusEl.textContent = res.ok
+      ? ""
+      : "Samsung's API responded with HTTP " + res.status + " — showing what it returned below.";
+    statusEl.className = res.ok ? "status-line" : "status-line warn";
+    renderResult(data);
+    updateHint();
+  }
+
+  function showError(msg) {
+    statusEl.textContent = "";
+    errorText.textContent = msg;
+    errorCard.classList.add("show");
+  }
+
+  function showRawFallback(text, status) {
+    errorText.textContent = "Samsung returned a response that wasn't valid JSON (HTTP " + status + "). Here's the raw text:";
+    errorCard.classList.add("show");
+    const pre = document.createElement("pre");
+    pre.className = "raw-fallback";
+    pre.textContent = text;
+    errorCard.appendChild(pre);
+  }
+
+  // ---------- Generic, schema-tolerant rendering ----------
+
+  const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg|bmp|avif)(\?[^#]*)?(#.*)?$/i;
+  const IMAGE_KEY_RE = /image|photo|thumbnail|thumb|picture/i;
+  const URL_RE = /^https?:\/\//i;
+  const DATE_KEY_RE = /date|time/i;
+
+  // Friendlier labels for fields we've actually observed. Anything not
+  // listed here still gets a readable label from prettifyKey() below, so
+  // new/renamed/removed fields never break the display.
+  const KEY_LABELS = {
+    serial: "Serial / IMEI",
+    inwarranty: "In Warranty",
+    warrantytype: "Warranty Type",
+    purchasedate: "Purchase Date",
+    warrantydate: "Warranty End Date",
+    disputestatus: "Dispute Status",
+    disputewtydate: "Dispute Warranty Date",
+    laborterm: "Labor Term",
+    partsterm: "Parts Term",
+    careplusflag: "Samsung Care+",
+    warrantyurl: "Warranty Info",
+    careplusc310url: "Care+ (Home Appliances)",
+    careplusc370url: "Care+ Info",
+    careplusiconflg: "Care+ Icon",
+    lfdblockflg: "LFD Block"
+  };
+  const PRIORITY_ORDER = [
+    "serial", "imei", "model", "modelname", "devicename", "inwarranty",
+    "warrantytype", "purchasedate", "warrantydate", "disputestatus",
+    "disputewtydate", "laborterm", "partsterm", "careplusflag"
+  ];
+  // Only "in warranty" gets good/bad coloring — it's the one boolean where
+  // false is unambiguously the worse outcome. Others (Care+ enrollment,
+  // internal flags, etc.) are just informational, so they stay neutral.
+  const POSITIVE_BOOLEAN_KEYS = ["inwarranty"];
+
+  function prettifyKey(key) {
+    const lower = key.toLowerCase();
+    if (KEY_LABELS[lower]) return KEY_LABELS[lower];
+    return key
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  function sortKeys(keys) {
+    return keys.slice().sort((a, b) => {
+      const ai = PRIORITY_ORDER.indexOf(a.toLowerCase());
+      const bi = PRIORITY_ORDER.indexOf(b.toLowerCase());
+      const av = ai === -1 ? 999 : ai;
+      const bv = bi === -1 ? 999 : bi;
+      if (av !== bv) return av - bv;
+      return a.localeCompare(b);
+    });
+  }
+
+  function looksLikeImageUrl(key, value) {
+    return typeof value === "string" && URL_RE.test(value) && (IMAGE_EXT_RE.test(value) || IMAGE_KEY_RE.test(key));
+  }
+
+  function tryParseDate(key, value) {
+    if (!DATE_KEY_RE.test(key)) return null;
+    let d = null;
+    if (typeof value === "number" && value > 0) {
+      d = new Date(value > 1e12 ? value : value * 1000);
+    } else if (typeof value === "string" && value.trim() !== "") {
+      const parsed = Date.parse(value);
+      if (!Number.isNaN(parsed)) d = new Date(parsed);
+    }
+    return (d && !Number.isNaN(d.getTime())) ? d : null;
+  }
+
+  function emptyNode() {
+    const span = document.createElement("span");
+    span.className = "v-empty";
+    span.textContent = "—";
+    return span;
+  }
+
+  function renderBoolean(key, value) {
+    const lower = key.toLowerCase();
+    const isPositiveKind = POSITIVE_BOOLEAN_KEYS.includes(lower);
+    const span = document.createElement("span");
+    span.className = "badge " + (isPositiveKind ? (value ? "good" : "bad") : "neutral");
+    span.textContent = value ? "Yes" : "No";
+    return span;
+  }
+
+  function renderImage(url) {
+    const wrap = document.createElement("div");
+    wrap.className = "image-wrap";
+
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = "Image from warranty response";
+    img.loading = "lazy";
+    img.className = "product-image";
+    img.addEventListener("error", () => {
+      wrap.innerHTML = "";
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.className = "link";
+      a.textContent = "Image failed to load — open link instead";
+      wrap.appendChild(a);
+    });
+    wrap.appendChild(img);
+
+    const dlBtn = document.createElement("button");
+    dlBtn.type = "button";
+    dlBtn.className = "ghost small";
+    dlBtn.textContent = "Download full size";
+    dlBtn.addEventListener("click", () => downloadImage(url, dlBtn));
+    wrap.appendChild(dlBtn);
+
+    return wrap;
+  }
+
+  function suggestFilename(url, mimeType) {
+    try {
+      const u = new URL(url);
+      const last = u.pathname.split("/").filter(Boolean).pop() || "image";
+      if (/\.\w+$/.test(last)) return last;
+      const ext = (mimeType && mimeType.split("/")[1]) || "jpg";
+      return last + "." + ext.split("+")[0];
+    } catch (e) {
+      return "image.jpg";
+    }
+  }
+
+  async function downloadImage(url, btn) {
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Downloading…";
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = suggestFilename(url, blob.type);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch (err) {
+      // Cross-origin fetch of the image itself may be blocked even though the
+      // API call wasn't — fall back to just opening it full-size so the
+      // user can save it manually.
+      window.open(url, "_blank", "noopener,noreferrer");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
+  function renderValue(key, value, depth) {
+    if (value === null || value === undefined || value === "") {
+      return emptyNode();
+    }
+    if (typeof value === "boolean") {
+      return renderBoolean(key, value);
+    }
+    if (typeof value === "number") {
+      const date = tryParseDate(key, value);
+      const span = document.createElement("span");
+      if (date) {
+        span.textContent = date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+        span.title = String(value);
+      } else {
+        span.textContent = value.toLocaleString();
+      }
+      return span;
+    }
+    if (typeof value === "string") {
+      if (looksLikeImageUrl(key, value)) {
+        return renderImage(value);
+      }
+      if (URL_RE.test(value)) {
+        const a = document.createElement("a");
+        a.href = value;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.className = "link";
+        a.textContent = value;
+        return a;
+      }
+      const date = tryParseDate(key, value);
+      const span = document.createElement("span");
+      if (date) {
+        span.textContent = date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+        span.title = value;
+      } else {
+        span.textContent = value;
+      }
+      return span;
+    }
+    if (Array.isArray(value)) {
+      if (value.length === 0) return emptyNode();
+      const allPrimitive = value.every(v => v === null || typeof v !== "object");
+      const wrap = document.createElement("div");
+      if (allPrimitive) {
+        value.forEach((v, i) => {
+          if (i > 0) wrap.appendChild(document.createTextNode(", "));
+          wrap.appendChild(renderValue(key, v, depth));
+        });
+        return wrap;
+      }
+      wrap.className = "nested-list";
+      value.forEach((item, i) => {
+        const box = document.createElement("div");
+        box.className = "nested-item";
+        const label = document.createElement("div");
+        label.className = "nested-label";
+        label.textContent = prettifyKey(key) + " " + (i + 1);
+        box.appendChild(label);
+        box.appendChild(renderObjectTable(item, depth + 1));
+        wrap.appendChild(box);
+      });
+      return wrap;
+    }
+    if (typeof value === "object") {
+      return renderObjectTable(value, depth + 1);
+    }
+    const span = document.createElement("span");
+    span.textContent = String(value);
+    return span;
+  }
+
+  function renderObjectTable(obj, depth) {
+    if (obj === null || typeof obj !== "object") {
+      return renderValue("value", obj, depth);
+    }
+    const keys = sortKeys(Object.keys(obj));
+    if (keys.length === 0) return emptyNode();
+
+    const table = document.createElement("div");
+    table.className = "kv-table" + (depth > 0 ? " nested" : "");
+    keys.forEach(key => {
+      const row = document.createElement("div");
+      row.className = "kv-row";
+      const k = document.createElement("div");
+      k.className = "kv-key";
+      k.textContent = prettifyKey(key);
+      const v = document.createElement("div");
+      v.className = "kv-value";
+      v.appendChild(renderValue(key, obj[key], depth));
+      row.appendChild(k);
+      row.appendChild(v);
+      table.appendChild(row);
+    });
+    return table;
+  }
+
+  function renderHeadline(data) {
+    headlineEl.innerHTML = "";
+    headlineEl.style.display = "none";
+    if (!data || typeof data !== "object" || Array.isArray(data)) return;
+    const key = Object.keys(data).find(k => /^in[_-]?warranty$/i.test(k));
+    if (!key || typeof data[key] !== "boolean") return;
+    const value = data[key];
+    const badge = document.createElement("div");
+    badge.className = "headline-badge " + (value ? "good" : "bad");
+    badge.textContent = value ? "✓ In Warranty" : "✕ Not In Warranty";
+    headlineEl.appendChild(badge);
+    headlineEl.style.display = "block";
+  }
+
+  function renderResult(data) {
+    renderHeadline(data);
+    fieldsEl.innerHTML = "";
+    fieldsEl.appendChild(renderObjectTable(data, 0));
+    rawJsonEl.textContent = JSON.stringify(data, null, 2);
+    rawDetails.open = false;
+    resultCard.classList.add("show");
+  }
+})();
+</script>
+</body>
+</html>
