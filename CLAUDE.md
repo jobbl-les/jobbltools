@@ -37,8 +37,14 @@ Node with zero build step (see "Testing" below).
 
 ## Shared conventions (every tool)
 
-- `<!doctype html>`, `lang="en"`, single `<meta viewport>`, `<title>{Name} —
-  tools</title>`.
+- `<!doctype html>`, `lang="en"`, single `<meta viewport>`, a
+  `<meta name="robots" content="noindex, nofollow, noarchive">` right after
+  it, and `<title>{Name} — tools</title>`. The robots meta tag plus the root
+  `robots.txt` (`Disallow: /`) are the whole crawling-prevention story for
+  this site — it's static hosting with no server config available, so there's
+  no way to send an `X-Robots-Tag` header; every new page needs the meta tag
+  added by hand since robots.txt alone doesn't stop crawlers that ignore it
+  or pages reached by direct link.
 - Theming via CSS custom properties on `:root`, redefined under
   `@media (prefers-color-scheme: dark)` — no toggle, follows the OS/browser.
   Always set `color-scheme: light dark`. Standard variable names across
@@ -92,3 +98,27 @@ thresholds, Corporation Tax rates). For those:
   advice ("illustrative estimator, not tax advice", etc.) — several tools
   already do this (salary/dividend optimiser, retirement projection,
   take-home pay).
+
+## Tools that call a third-party API
+
+`whats-my-ip`, `postcode-validator`, `uk-location-facts`, and
+`samsung-warranty-checker` call out to someone else's API directly from the
+browser (no server-side proxy exists or is planned). Before building one:
+
+- Check CORS first with `curl -H "Origin: https://tools.intheshire.io" ...`
+  and look for a reflected/wildcard `Access-Control-Allow-Origin` — if it's
+  missing or locked to specific origins, the fetch won't work from a static
+  page and the tool isn't feasible as a client-only page.
+- For undocumented/unofficial endpoints (e.g. Samsung's warranty lookup),
+  render the response generically/defensively rather than assuming a fixed
+  shape: prettify unknown keys instead of dropping them, handle
+  null/missing/renamed fields without erroring, and always show a raw JSON
+  fallback so a shape change is visible/debuggable rather than silently
+  broken. See `samsung-warranty-checker/index.html`'s `renderObjectTable`/
+  `renderValue` for the pattern (also handles nested objects/arrays, and
+  image URLs — shown as a constrained-size preview with a "download full
+  size" button that fetches-as-blob so cross-origin images still force a
+  download rather than just navigating to them).
+- State plainly in-tool that the request goes browser-to-third-party with
+  nothing stored or proxied by this site (privacy-relevant when the input is
+  something identifying like an IMEI).
