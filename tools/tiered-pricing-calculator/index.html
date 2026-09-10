@@ -801,10 +801,19 @@
 
   // ---------- Cost model ----------
 
+  // Unit rates keep whatever precision they were entered with — only figures
+  // arrived at by multiplying/summing/dividing get rounded to cents.
+  function round2(n) {
+    return Math.round((n + Number.EPSILON) * 100) / 100;
+  }
+
   // breakdown lists only the tiers that actually absorbed some usage at this
-  // volume; tieredCost is the graduated sum before any minimum-invoice floor;
-  // cost is what's actually charged (tieredCost, or minInvoice if higher) —
-  // that's the figure plotted and used for the effective rate.
+  // volume; each tier's total (used * rate) is rounded to 2dp as soon as it's
+  // struck, the way an invoice line would be. tieredCost is the sum of those
+  // rounded line totals (rounded again to absorb any float noise from
+  // summing already-rounded numbers) before any minimum-invoice floor; cost
+  // is what's actually charged (tieredCost, or minInvoice if higher) — the
+  // figure plotted, and the one the effective rate is derived from.
   function computeForVolume(volume, tiers, minInvoice) {
     let remaining = volume;
     let tieredCost = 0;
@@ -813,14 +822,15 @@
       if (remaining <= 0) return;
       const size = tier.uses == null ? Infinity : tier.uses;
       const used = Math.max(0, Math.min(remaining, size));
-      const tierCost = used * tier.rate;
+      const tierCost = round2(used * tier.rate);
       if (used > 0) breakdown.push({ tierIndex: i, used, rate: tier.rate, tierCost });
       tieredCost += tierCost;
       remaining -= used;
     });
+    tieredCost = round2(tieredCost);
     const minApplied = minInvoice > 0 && tieredCost < minInvoice;
     const cost = minApplied ? minInvoice : tieredCost;
-    const effectiveRate = volume > 0 ? cost / volume : 0;
+    const effectiveRate = volume > 0 ? round2(cost / volume) : 0;
     return { volume, tieredCost, cost, effectiveRate, breakdown, minApplied };
   }
 
@@ -867,9 +877,13 @@
 
   let lastData = null;
 
+  // Cost/total figures are already rounded to cents by computeForVolume, so
+  // this just formats — fixed at 2dp rather than the wider ceiling fmtRate
+  // uses, since there's nothing beyond the 2nd decimal to show.
   function fmtCost(n) {
-    return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+    return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
+  // Unit rates (as entered per tier) keep their full precision — not rounded.
   function fmtRate(n) {
     return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
   }
