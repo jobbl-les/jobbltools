@@ -131,12 +131,11 @@
     padding: 0 0.5rem 0.4rem;
   }
   .tier-table td { padding: 0.3rem 0.5rem; vertical-align: top; }
-  .tier-table td.range-col {
+  .tier-table td.label-col {
     font-size: 0.82rem;
     color: var(--text-secondary);
     white-space: nowrap;
     padding-top: 0.65rem;
-    font-variant-numeric: tabular-nums;
   }
   .tier-table td.remove-col { width: 2.2rem; text-align: center; }
   .row-err {
@@ -291,9 +290,9 @@
     <table class="tier-table">
       <thead>
         <tr>
+          <th style="width:16%;"></th>
           <th style="width:22%;">Uses in this tier</th>
           <th style="width:22%;">Rate per use</th>
-          <th>Applies to uses</th>
           <th class="remove-col"></th>
         </tr>
       </thead>
@@ -516,19 +515,27 @@
 
   // ---------- Tier editor ----------
 
-  function fmtRange(fromUses, tier) {
-    if (tier.uses == null) return (fromUses + 1) + "+";
-    return (fromUses + 1) + " – " + (fromUses + tier.uses);
+  // Display-only narrative prefix for a tier row: the first row reads "The
+  // first", a middle row "The next", and the final row "All others" — a row
+  // that's both first and last (a single-tier table) reads as "The first".
+  function fmtRowLabel(i, isLast) {
+    if (i === 0) return "The first";
+    if (isLast) return "All others";
+    return "The next";
   }
 
   function renderTiers() {
     const tiers = activeTable().tiers;
     tierBody.innerHTML = "";
-    let cumulative = 0;
 
     tiers.forEach((tier, i) => {
       const isLast = i === tiers.length - 1;
       const tr = document.createElement("tr");
+
+      const labelTd = document.createElement("td");
+      labelTd.className = "label-col";
+      labelTd.textContent = fmtRowLabel(i, isLast);
+      tr.appendChild(labelTd);
 
       const usesTd = document.createElement("td");
       const usesInput = document.createElement("input");
@@ -582,11 +589,6 @@
       }
       tr.appendChild(rateTd);
 
-      const rangeTd = document.createElement("td");
-      rangeTd.className = "range-col";
-      rangeTd.textContent = fmtRange(cumulative, tier);
-      tr.appendChild(rangeTd);
-
       const removeTd = document.createElement("td");
       removeTd.className = "remove-col";
       const removeBtn = document.createElement("button");
@@ -602,22 +604,21 @@
       tr.appendChild(removeTd);
 
       tierBody.appendChild(tr);
-
-      if (tier.uses != null && tier.uses > 0) cumulative += tier.uses;
     });
   }
 
-  // Updates range text and inline error messages in place, without touching
-  // input elements — keeps focus and in-progress typing (e.g. a trailing
-  // decimal point) intact, unlike a full renderTiers() rebuild.
+  // Updates inline error messages in place, without touching input elements
+  // — keeps focus and in-progress typing (e.g. a trailing decimal point)
+  // intact, unlike a full renderTiers() rebuild. The label column is static
+  // per row (depends only on position, not on any input) so it needs no
+  // updating here.
   function updateComputedColumns() {
     const tiers = activeTable().tiers;
-    let cumulative = 0;
     Array.from(tierBody.children).forEach((tr, i) => {
       const tier = tiers[i];
       const isLast = i === tiers.length - 1;
 
-      const usesTd = tr.children[0];
+      const usesTd = tr.children[1];
       const usesInvalid = !isLast && (tier.uses == null || !(tier.uses > 0));
       let usesErr = usesTd.querySelector(".row-err");
       if (usesInvalid && !usesErr) {
@@ -629,7 +630,7 @@
         usesErr.remove();
       }
 
-      const rateTd = tr.children[1];
+      const rateTd = tr.children[2];
       const rateInvalid = !(tier.rate >= 0);
       let rateErr = rateTd.querySelector(".row-err");
       if (rateInvalid && !rateErr) {
@@ -640,9 +641,6 @@
       } else if (!rateInvalid && rateErr) {
         rateErr.remove();
       }
-
-      tr.children[2].textContent = fmtRange(cumulative, tier);
-      if (tier.uses != null && tier.uses > 0) cumulative += tier.uses;
     });
   }
 
