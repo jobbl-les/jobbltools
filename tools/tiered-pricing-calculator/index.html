@@ -123,20 +123,14 @@
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .tier-table { width: 100%; border-collapse: collapse; }
-  .tier-table th {
-    text-align: left;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    font-weight: 600;
-    padding: 0 0.5rem 0.4rem;
-  }
   .tier-table td { padding: 0.3rem 0.5rem; vertical-align: top; }
-  .tier-table td.label-col {
+  .tier-table td.note-col {
     font-size: 0.82rem;
     color: var(--text-secondary);
     white-space: nowrap;
     padding-top: 0.65rem;
   }
+  .tier-table td.uses-col, .tier-table td.rate-col { width: 20%; }
   .tier-table td.remove-col { width: 2.2rem; text-align: center; }
   .row-err {
     font-size: 0.75rem;
@@ -288,14 +282,6 @@
   <div class="card">
     <h2>Tiers</h2>
     <table class="tier-table">
-      <thead>
-        <tr>
-          <th style="width:16%;"></th>
-          <th style="width:22%;">Uses in this tier</th>
-          <th style="width:22%;">Rate per use</th>
-          <th class="remove-col"></th>
-        </tr>
-      </thead>
       <tbody id="tierBody"></tbody>
     </table>
     <button class="btn add-row-btn" id="addTierBtn" type="button">+ Add tier</button>
@@ -533,11 +519,12 @@
       const tr = document.createElement("tr");
 
       const labelTd = document.createElement("td");
-      labelTd.className = "label-col";
+      labelTd.className = "note-col";
       labelTd.textContent = fmtRowLabel(i, isLast);
       tr.appendChild(labelTd);
 
       const usesTd = document.createElement("td");
+      usesTd.className = "uses-col";
       const usesInput = document.createElement("input");
       usesInput.type = "number";
       usesInput.min = "0";
@@ -545,6 +532,7 @@
       usesInput.value = tier.uses == null ? "" : tier.uses;
       usesInput.placeholder = isLast ? "unlimited" : "e.g. 1000";
       usesInput.disabled = false;
+      usesInput.setAttribute("aria-label", "Uses in this tier");
       usesInput.addEventListener("input", () => {
         const v = usesInput.value.trim();
         if (v === "" && isLast) {
@@ -566,13 +554,20 @@
       }
       tr.appendChild(usesTd);
 
+      const usesConnectorTd = document.createElement("td");
+      usesConnectorTd.className = "note-col";
+      usesConnectorTd.textContent = "uses, cost";
+      tr.appendChild(usesConnectorTd);
+
       const rateTd = document.createElement("td");
+      rateTd.className = "rate-col";
       const rateInput = document.createElement("input");
       rateInput.type = "number";
       rateInput.min = "0";
       rateInput.step = "any";
       rateInput.value = tier.rate;
       rateInput.placeholder = "e.g. 0.10";
+      rateInput.setAttribute("aria-label", "Rate per use");
       rateInput.addEventListener("input", () => {
         const n = parseFloat(rateInput.value);
         tier.rate = Number.isFinite(n) ? n : NaN;
@@ -588,6 +583,11 @@
         rateTd.appendChild(err);
       }
       tr.appendChild(rateTd);
+
+      const rateConnectorTd = document.createElement("td");
+      rateConnectorTd.className = "note-col";
+      rateConnectorTd.textContent = "per use";
+      tr.appendChild(rateConnectorTd);
 
       const removeTd = document.createElement("td");
       removeTd.className = "remove-col";
@@ -630,7 +630,7 @@
         usesErr.remove();
       }
 
-      const rateTd = tr.children[2];
+      const rateTd = tr.children[3];
       const rateInvalid = !(tier.rate >= 0);
       let rateErr = rateTd.querySelector(".row-err");
       if (rateInvalid && !rateErr) {
