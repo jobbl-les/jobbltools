@@ -159,6 +159,11 @@
     margin-top: 0.75rem;
   }
 
+  .min-invoice-row {
+    margin-top: 1rem;
+    max-width: 260px;
+  }
+
   .csv-row {
     display: flex;
     gap: 0.75rem;
@@ -194,6 +199,7 @@
   .gridline { stroke: var(--grid); stroke-width: 1; }
   .axis-line { stroke: var(--axis); stroke-width: 1; }
   .series-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .min-invoice-line { stroke: var(--text-muted); stroke-width: 1.25; stroke-dasharray: 4 3; }
   .crosshair { stroke: var(--axis); stroke-width: 1; pointer-events: none; }
   .end-dot { stroke: var(--surface); stroke-width: 2; }
 
@@ -207,16 +213,20 @@
     font-size: 0.8rem;
     color: var(--text-secondary);
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    white-space: nowrap;
+    max-width: 310px;
     opacity: 0;
     transition: opacity 0.08s;
     z-index: 5;
   }
   .tooltip.show { opacity: 1; }
-  .tooltip .t-head { font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; }
-  .tooltip .t-row { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.15rem; }
-  .tooltip .key { width: 10px; height: 2px; display: inline-block; }
+  .tooltip .t-head { font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; white-space: nowrap; }
+  .tooltip .t-row { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.15rem; white-space: nowrap; }
+  .tooltip .key { width: 10px; height: 2px; display: inline-block; flex: none; }
   .tooltip .val { font-weight: 600; color: var(--text-primary); margin-left: auto; padding-left: 0.75rem; }
+  .tooltip .t-tier-line { font-size: 0.76rem; color: var(--text-secondary); margin-top: 0.15rem; white-space: normal; }
+  .tooltip .t-sub-row { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.15rem; white-space: nowrap; color: var(--text-muted); }
+  .tooltip .t-sub-row .val { font-weight: 600; color: var(--text-secondary); margin-left: auto; padding-left: 0.75rem; }
+  .tooltip .t-divider { height: 1px; background: var(--border); margin: 0.4rem 0; }
 
   .table-toggle {
     background: none;
@@ -292,6 +302,12 @@
     <button class="btn add-row-btn" id="addTierBtn" type="button">+ Add tier</button>
     <div class="err-box" id="tierErr" style="display:none;"></div>
     <p class="note">Leave the last row's "uses" blank for unlimited, so it covers all further usage.</p>
+
+    <div class="min-invoice-row">
+      <label for="minInvoiceInput">Minimum invoice value (optional)</label>
+      <input id="minInvoiceInput" type="number" min="0" step="any" placeholder="none">
+    </div>
+    <p class="note">If the tiered total for a given volume comes out below this, the minimum is charged instead — applied throughout the chart, table, and tooltip below.</p>
   </div>
 
   <div class="card">
@@ -344,9 +360,11 @@
   <p class="caveats">
     Total cost is graduated (like tax bands): uses actually falling within each tier are charged at that tier's rate,
     and tiers stack as volume grows. If the last tier isn't marked unlimited and volume exceeds the total defined
-    capacity, cost stops increasing beyond that point. Everything here — tables, tiers, and the current range — is
-    stored only in this browser's local storage; nothing is uploaded, and CSV import/export is entirely local to
-    your device.
+    capacity, cost stops increasing beyond that point. If a minimum invoice value is set and the graduated total for
+    a given volume falls short of it, the minimum is charged instead — this floor is reflected in the total cost and
+    effective cost/use lines (shown as a dashed reference line on the chart), the data table, and the tooltip.
+    Everything here — tables, tiers, minimum invoice, and the current range — is stored only in this browser's local
+    storage; nothing is uploaded, and CSV import/export is entirely local to your device.
   </p>
 </main>
 </div>
@@ -375,6 +393,7 @@
             { uses: 200, rate: 0.5 },
             { uses: null, rate: 0.25 }
           ],
+          minInvoice: 0,
           minVolume: 0,
           maxVolume: 1000
         }
@@ -410,6 +429,7 @@
   const tierBody = document.getElementById("tierBody");
   const addTierBtn = document.getElementById("addTierBtn");
   const tierErr = document.getElementById("tierErr");
+  const minInvoiceInput = document.getElementById("minInvoiceInput");
 
   const exportCsvBtn = document.getElementById("exportCsvBtn");
   const importCsvInput = document.getElementById("importCsvInput");
@@ -455,7 +475,7 @@
 
   newTableBtn.addEventListener("click", () => {
     const id = makeId();
-    store.tables[id] = { name: "New table", tiers: [{ uses: null, rate: 0 }], minVolume: 0, maxVolume: 1000 };
+    store.tables[id] = { name: "New table", tiers: [{ uses: null, rate: 0 }], minInvoice: 0, minVolume: 0, maxVolume: 1000 };
     store.activeId = id;
     saveStore();
     renderTableSelect();
@@ -485,6 +505,7 @@
   function loadActiveIntoEditor() {
     const t = activeTable();
     tableNameInput.value = t.name;
+    minInvoiceInput.value = t.minInvoice ? t.minInvoice : "";
     minVolInput.value = t.minVolume;
     maxVolInput.value = t.maxVolume;
     expandSliderBoundIfNeeded(Math.max(t.minVolume, t.maxVolume));
@@ -633,6 +654,13 @@
     persistAndRender();
   });
 
+  minInvoiceInput.addEventListener("input", () => {
+    const n = parseFloat(minInvoiceInput.value);
+    activeTable().minInvoice = Number.isFinite(n) && n > 0 ? n : 0;
+    saveStore();
+    render();
+  });
+
   function validTiers(tiers) {
     if (!tiers.length) return false;
     for (let i = 0; i < tiers.length; i++) {
@@ -773,18 +801,27 @@
 
   // ---------- Cost model ----------
 
-  function computeForVolume(volume, tiers) {
+  // breakdown lists only the tiers that actually absorbed some usage at this
+  // volume; tieredCost is the graduated sum before any minimum-invoice floor;
+  // cost is what's actually charged (tieredCost, or minInvoice if higher) —
+  // that's the figure plotted and used for the effective rate.
+  function computeForVolume(volume, tiers, minInvoice) {
     let remaining = volume;
-    let cost = 0;
-    for (const tier of tiers) {
+    let tieredCost = 0;
+    const breakdown = [];
+    tiers.forEach((tier, i) => {
+      if (remaining <= 0) return;
       const size = tier.uses == null ? Infinity : tier.uses;
       const used = Math.max(0, Math.min(remaining, size));
-      cost += used * tier.rate;
+      const tierCost = used * tier.rate;
+      if (used > 0) breakdown.push({ tierIndex: i, used, rate: tier.rate, tierCost });
+      tieredCost += tierCost;
       remaining -= used;
-      if (remaining <= 0) break;
-    }
+    });
+    const minApplied = minInvoice > 0 && tieredCost < minInvoice;
+    const cost = minApplied ? minInvoice : tieredCost;
     const effectiveRate = volume > 0 ? cost / volume : 0;
-    return { volume, cost, effectiveRate };
+    return { volume, tieredCost, cost, effectiveRate, breakdown, minApplied };
   }
 
   // ---------- "Nice" axis scale ----------
@@ -864,10 +901,11 @@
     syncRangeControls(min, max);
     saveStore();
 
+    const minInvoice = activeTable().minInvoice || 0;
     const points = [];
     for (let i = 0; i < N_POINTS; i++) {
       const volume = min + ((max - min) * i) / (N_POINTS - 1);
-      points.push(computeForVolume(volume, tiers));
+      points.push(computeForVolume(volume, tiers, minInvoice));
     }
 
     const costMax = Math.max.apply(null, points.map(p => p.cost));
@@ -941,6 +979,14 @@
     endLabel2.textContent = fmtRate(lastP.effectiveRate);
     svg.appendChild(endLabel2);
 
+    if (minInvoice > 0 && minInvoice <= yLeft.max) {
+      const minY = yLeftScale(minInvoice);
+      svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: minY, y2: minY, class: "min-invoice-line" }));
+      const minLabel = el("text", { x: MARGIN.left + 6, y: minY - 5, class: "tick-label" });
+      minLabel.textContent = "Minimum invoice: " + fmtCost(minInvoice);
+      svg.appendChild(minLabel);
+    }
+
     const crosshair = el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "crosshair", visibility: "hidden", id: "crosshairLine" });
     svg.appendChild(crosshair);
 
@@ -978,7 +1024,7 @@
     tooltip.innerHTML = "";
     const head = document.createElement("div");
     head.className = "t-head";
-    head.textContent = fmtUses(p.volume) + " uses";
+    head.textContent = "Total volume: " + fmtUses(p.volume) + " uses";
     tooltip.appendChild(head);
 
     function row(color, label, value) {
@@ -998,10 +1044,48 @@
       tooltip.appendChild(r);
     }
 
-    row("var(--series-1)", "Total cost", fmtCost(p.cost));
+    function subRow(label, value) {
+      const r = document.createElement("div");
+      r.className = "t-sub-row";
+      const lbl = document.createElement("span");
+      lbl.textContent = label;
+      r.appendChild(lbl);
+      const val = document.createElement("span");
+      val.className = "val";
+      val.textContent = value;
+      r.appendChild(val);
+      tooltip.appendChild(r);
+    }
+
+    function divider() {
+      const d = document.createElement("div");
+      d.className = "t-divider";
+      tooltip.appendChild(d);
+    }
+
+    // Per-tier breakdown: "x in tier N @ rate = tier total", for every tier
+    // that actually absorbed some usage at this volume.
+    if (p.breakdown.length) {
+      p.breakdown.forEach(b => {
+        const line = document.createElement("div");
+        line.className = "t-tier-line";
+        line.textContent = fmtUses(b.used) + " in Tier " + (b.tierIndex + 1) +
+          " @ " + fmtRate(b.rate) + " = " + fmtCost(b.tierCost);
+        tooltip.appendChild(line);
+      });
+      divider();
+    }
+
+    subRow("Sum of tier totals", fmtCost(p.tieredCost));
+    if (p.minApplied) {
+      subRow("Minimum invoice floor", fmtCost(p.cost));
+    }
+    divider();
+
+    row("var(--series-1)", "Total cost" + (p.minApplied ? " (minimum applied)" : ""), fmtCost(p.cost));
     row("var(--series-2)", "Effective cost/use", fmtRate(p.effectiveRate));
 
-    const left = Math.min(Math.max(tipX + 12, 0), chartWrap.clientWidth - 190);
+    const left = Math.min(Math.max(tipX + 12, 0), chartWrap.clientWidth - 320);
     tooltip.style.left = left + "px";
     tooltip.style.top = "10px";
     tooltip.classList.add("show");
@@ -1018,10 +1102,11 @@
     const ROWS = 21;
     const { min, max } = lastData;
     const tiers = activeTable().tiers;
+    const minInvoice = activeTable().minInvoice || 0;
     let html = "";
     for (let i = 0; i < ROWS; i++) {
       const volume = min + ((max - min) * i) / (ROWS - 1);
-      const p = computeForVolume(volume, tiers);
+      const p = computeForVolume(volume, tiers, minInvoice);
       html += "<tr>" +
         "<td>" + fmtUses(p.volume) + "</td>" +
         "<td>" + fmtCost(p.cost) + "</td>" +
