@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Regex Pattern Builder — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+    --good: #16a34a;
+    --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+      --good: #4ade80;
+      --bad: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main {
+    width: 100%;
+    max-width: 780px;
+  }
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin: 0.75rem 0 0.3rem;
+  }
+  p.sub {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.9rem;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  textarea {
+    width: 100%;
+    min-height: 8rem;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--fg);
+    resize: vertical;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    font-size: 0.95rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--fg);
+  }
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+  }
+  input[type="file"] {
+    font-size: 0.85rem;
+    color: var(--fg);
+  }
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin: 0.9rem 0;
+  }
+  .divider::before, .divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+  .btn.ghost {
+    background: var(--surface);
+    color: var(--fg);
+    border: 1px solid var(--border);
+  }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+
+  .opts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.9rem;
+    font-size: 0.85rem;
+  }
+  .opts-row label.check {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--fg);
+    margin-bottom: 0;
+    cursor: pointer;
+  }
+  .opts-row input[type="checkbox"] { margin: 0; }
+
+  .kv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.7rem 1.2rem;
+    font-size: 0.88rem;
+  }
+  .kv-grid .k { color: var(--muted); font-size: 0.78rem; }
+  .kv-grid .v { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+
+  .mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 0.9rem;
+    font-size: 0.85rem;
+  }
+  .mode-row label.radio {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--fg);
+    margin-bottom: 0;
+    cursor: pointer;
+  }
+  .mode-row input[disabled] + span { color: var(--muted); }
+
+  .pattern-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+    margin-bottom: 0.6rem;
+  }
+  .pattern-row input[type="text"] { flex: 1; }
+  .flags-input { width: 4.5rem !important; flex: none !important; text-align: center; }
+
+  .summary-line {
+    font-size: 0.95rem;
+    margin: 0.8rem 0;
+  }
+  .summary-line b.good { color: var(--good); }
+  .summary-line b.bad { color: var(--bad); }
+
+  .warning-box {
+    background: color-mix(in srgb, var(--bad) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--bad) 35%, transparent);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.82rem;
+    margin-bottom: 0.9rem;
+  }
+  .warning-box ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }
+  .error-box {
+    background: color-mix(in srgb, var(--bad) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--bad) 40%, transparent);
+    color: var(--fg);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.85rem;
+  }
+
+  table.fail-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  table.fail-table th, table.fail-table td {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+  table.fail-table th { color: var(--muted); font-weight: 600; }
+  table.fail-table td.line { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+  table.fail-table td.num { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .table-wrap { max-height: 320px; overflow-y: auto; margin-top: 0.6rem; }
+  .section-empty { color: var(--muted); font-size: 0.85rem; }
+  .more-note { color: var(--muted); font-size: 0.8rem; margin-top: 0.5rem; }
+
+  .caveats { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>Regex Pattern Builder</h1>
+  <p class="sub">
+    Upload (or paste) a file with one string per line and derive the tightest regular
+    expression that matches every row — length bounds and character classes only as
+    wide as the data actually justifies, not a catch-all.
+  </p>
+
+  <div class="card">
+    <div class="file-row">
+      <label style="margin:0;" for="fileInput">Choose a .csv or .txt file</label>
+    </div>
+    <div class="file-row">
+      <input id="fileInput" type="file" accept=".csv,.txt,text/csv,text/plain">
+    </div>
+
+    <div class="divider">or paste lines</div>
+
+    <label for="pasteInput">One value per line</label>
+    <textarea id="pasteInput">INV-0001
+INV-0002
+INV-0047
+INV-9999</textarea>
+    <div style="margin-top:0.75rem;">
+      <button class="btn" id="analyzeBtn" type="button">Analyze</button>
+    </div>
+
+    <div class="opts-row">
+      <label class="check"><input type="checkbox" id="optTrim" checked> Trim whitespace from each line</label>
+      <label class="check"><input type="checkbox" id="optIgnoreBlank" checked> Ignore blank lines</label>
+    </div>
+  </div>
+
+  <div class="card" id="statsCard" style="display:none;">
+    <h2>What the data looks like</h2>
+    <div class="kv-grid" id="statsGrid"></div>
+  </div>
+
+  <div class="card" id="patternCard" style="display:none;">
+    <h2>Suggested pattern</h2>
+    <div class="mode-row" id="modeRow"></div>
+    <div class="opts-row" style="margin-top:0; margin-bottom:0.9rem;">
+      <label class="check"><input type="checkbox" id="optAnchor" checked> Anchor with ^ and $</label>
+    </div>
+
+    <label for="patternInput">Regex — edit this directly to tighten or loosen it</label>
+    <div class="pattern-row">
+      <input id="patternInput" type="text" spellcheck="false" autocapitalize="off" autocorrect="off">
+      <input id="flagsInput" type="text" class="flags-input" spellcheck="false" placeholder="flags" title="Regex flags, e.g. i for case-insensitive">
+      <button class="btn ghost" id="copyBtn" type="button">Copy</button>
+    </div>
+
+    <div id="warningsWrap"></div>
+
+    <div class="summary-line" id="summaryLine"></div>
+
+    <div id="failWrap"></div>
+  </div>
+
+  <p class="caveats">
+    Everything runs in your browser — the file or pasted text is never uploaded anywhere.
+    "Per-position" mode is offered only when every line is the same length, and builds
+    the pattern column by column (a literal character where a column never varies, a
+    character class of only the characters actually seen where it does). "Charset range"
+    mode instead finds the longest common prefix/suffix across all lines and allows a
+    bounded-length run of the observed characters in between — the only option for
+    variable-length data. Neither mode can know your intent beyond what's in the sample:
+    if a column happened to only ever contain digits 1&ndash;3, that's what the pattern
+    will require, even if 0 and 4&ndash;9 are valid in principle — widen the character
+    class or length bounds by hand once you understand why a row failed.
+  </p>
+</main>
+
+<script src="pattern-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  const fileInput = document.getElementById("fileInput");
+  const pasteInput = document.getElementById("pasteInput");
+  const analyzeBtn = document.getElementById("analyzeBtn");
+  const optTrim = document.getElementById("optTrim");
+  const optIgnoreBlank = document.getElementById("optIgnoreBlank");
+
+  const statsCard = document.getElementById("statsCard");
+  const statsGrid = document.getElementById("statsGrid");
+
+  const patternCard = document.getElementById("patternCard");
+  const modeRow = document.getElementById("modeRow");
+  const optAnchor = document.getElementById("optAnchor");
+  const patternInput = document.getElementById("patternInput");
+  const flagsInput = document.getElementById("flagsInput");
+  const copyBtn = document.getElementById("copyBtn");
+  const warningsWrap = document.getElementById("warningsWrap");
+  const summaryLine = document.getElementById("summaryLine");
+  const failWrap = document.getElementById("failWrap");
+
+  const MAX_FAILS_SHOWN = 30;
+
+  let currentLines = [];
+  let currentLineNumbers = [];
+  let currentStats = null;
+  let currentMode = "auto";
+  let suppressRebuild = false; // true while we're programmatically setting patternInput
+
+  function fmtLen(stats) {
+    return stats.fixedLength
+      ? stats.minLen + " (fixed)"
+      : stats.minLen + "–" + stats.maxLen;
+  }
+
+  function classList(classes) {
+    const parts = [];
+    if (classes.digit) parts.push("digits");
+    if (classes.lower) parts.push("lowercase");
+    if (classes.upper) parts.push("uppercase");
+    if (classes.other) parts.push("other");
+    return parts.length ? parts.join(", ") : "—";
+  }
+
+  function renderStats(stats) {
+    statsGrid.innerHTML = "";
+    const rows = [
+      ["Lines analyzed", String(stats.count)],
+      ["Length", fmtLen(stats)],
+      ["Character classes seen", classList(stats.classes)],
+      ["Distinct characters", String(stats.distinctChars.length)]
+    ];
+    if (stats.commonPrefix) rows.push(["Common prefix", JSON.stringify(stats.commonPrefix)]);
+    if (stats.commonSuffix) rows.push(["Common suffix", JSON.stringify(stats.commonSuffix)]);
+    if (stats.otherChars.length) rows.push(["Other characters used", stats.otherChars.map(c => JSON.stringify(c)).join(" ")]);
+
+    rows.forEach(([k, v]) => {
+      const kEl = document.createElement("div");
+      kEl.className = "k";
+      kEl.textContent = k;
+      const vEl = document.createElement("div");
+      vEl.className = "v";
+      vEl.textContent = v;
+      const wrap = document.createElement("div");
+      wrap.appendChild(kEl);
+      wrap.appendChild(vEl);
+      statsGrid.appendChild(wrap);
+    });
+    statsCard.style.display = "block";
+  }
+
+  function renderModeRow(stats) {
+    modeRow.innerHTML = "";
+    const options = [
+      { id: "positional", label: "Per-position (strict)", disabled: !stats.fixedLength },
+      { id: "charset", label: "Charset range", disabled: false }
+    ];
+    options.forEach(opt => {
+      const label = document.createElement("label");
+      label.className = "radio";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = "mode";
+      input.value = opt.id;
+      input.checked = currentMode === opt.id;
+      input.disabled = opt.disabled;
+      input.addEventListener("change", () => {
+        currentMode = opt.id;
+        rebuildSuggested();
+      });
+      const span = document.createElement("span");
+      span.textContent = opt.label + (opt.disabled ? " — needs equal-length lines" : "");
+      label.appendChild(input);
+      label.appendChild(span);
+      modeRow.appendChild(label);
+    });
+  }
+
+  function rebuildSuggested() {
+    if (!currentLines.length) return;
+    const result = PatternLib.buildRegex(currentLines, { mode: currentMode, anchor: optAnchor.checked });
+    if (result.error) {
+      failWrap.innerHTML = '<div class="error-box">' + result.error + "</div>";
+      summaryLine.textContent = "";
+      warningsWrap.innerHTML = "";
+      return;
+    }
+    suppressRebuild = true;
+    patternInput.value = result.pattern;
+    flagsInput.value = "";
+    suppressRebuild = false;
+    runTest();
+  }
+
+  function renderWarnings(warnings) {
+    if (!warnings.length) { warningsWrap.innerHTML = ""; return; }
+    let html = '<div class="warning-box"><strong>Still fairly loose:</strong><ul>';
+    warnings.forEach(w => { html += "<li>" + w + "</li>"; });
+    html += "</ul></div>";
+    warningsWrap.innerHTML = html;
+  }
+
+  function renderFailures(failed, total) {
+    if (!failed.length) {
+      failWrap.innerHTML = total ? '<div class="section-empty">All lines match.</div>' : "";
+      return;
+    }
+    const shown = failed.slice(0, MAX_FAILS_SHOWN);
+    let html = '<div class="table-wrap"><table class="fail-table"><thead><tr><th>Line #</th><th>Value</th></tr></thead><tbody>';
+    shown.forEach(f => {
+      const lineNum = currentLineNumbers[f.index] != null ? currentLineNumbers[f.index] : f.index + 1;
+      html += "<tr><td class=\"num\">" + lineNum + "</td><td class=\"line\">" + escapeHtml(f.line) + "</td></tr>";
+    });
+    html += "</tbody></table></div>";
+    if (failed.length > MAX_FAILS_SHOWN) {
+      html += '<div class="more-note">+ ' + (failed.length - MAX_FAILS_SHOWN) + " more not shown.</div>";
+    }
+    failWrap.innerHTML = html;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function runTest() {
+    if (!currentLines.length) return;
+    const pattern = patternInput.value;
+    const flags = flagsInput.value;
+    const result = PatternLib.testPattern(pattern, flags, currentLines);
+
+    if (!result.ok) {
+      summaryLine.innerHTML = "";
+      warningsWrap.innerHTML = "";
+      failWrap.innerHTML = '<div class="error-box">Invalid pattern: ' + escapeHtml(result.error) + "</div>";
+      return;
+    }
+
+    const allMatch = result.matched === result.total;
+    summaryLine.innerHTML = "<b class=\"" + (allMatch ? "good" : "bad") + "\">" + result.matched + " / " + result.total +
+      "</b> lines match" + (allMatch ? "." : " — " + (result.total - result.matched) + " failing shown below.");
+
+    renderWarnings(PatternLib.looseness(pattern));
+    renderFailures(result.failed, result.total);
+  }
+
+  function loadText(text) {
+    const { lines, lineNumbers } = PatternLib.splitLines(text, {
+      trim: optTrim.checked,
+      ignoreBlank: optIgnoreBlank.checked
+    });
+    currentLines = lines;
+    currentLineNumbers = lineNumbers;
+
+    if (!lines.length) {
+      statsCard.style.display = "none";
+      patternCard.style.display = "none";
+      return;
+    }
+
+    currentStats = PatternLib.analyze(lines);
+    currentMode = currentStats.fixedLength ? "positional" : "charset";
+
+    renderStats(currentStats);
+    renderModeRow(currentStats);
+    patternCard.style.display = "block";
+    rebuildSuggested();
+  }
+
+  analyzeBtn.addEventListener("click", () => loadText(pasteInput.value));
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      pasteInput.value = String(reader.result);
+      loadText(pasteInput.value);
+    };
+    reader.onerror = () => {
+      statsCard.style.display = "none";
+      patternCard.style.display = "none";
+    };
+    reader.readAsText(file);
+  });
+
+  optAnchor.addEventListener("change", rebuildSuggested);
+  patternInput.addEventListener("input", () => { if (!suppressRebuild) runTest(); });
+  flagsInput.addEventListener("input", () => { if (!suppressRebuild) runTest(); });
+
+  copyBtn.addEventListener("click", () => {
+    navigator.clipboard.writeText(patternInput.value).then(() => {
+      const original = copyBtn.textContent;
+      copyBtn.textContent = "Copied";
+      setTimeout(() => { copyBtn.textContent = original; }, 1200);
+    }).catch(() => {});
+  });
+
+  // ---------- Init ----------
+  loadText(pasteInput.value);
+})();
+</script>
+</body>
+</html>
