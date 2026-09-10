@@ -800,9 +800,16 @@
   // ---------- Cost model ----------
 
   // Unit rates keep whatever precision they were entered with — only figures
-  // arrived at by multiplying/summing/dividing get rounded to cents.
+  // arrived at by multiplying/summing/dividing get rounded, and money
+  // amounts (tier totals, sums, total cost) round to cents. The effective
+  // rate is rounded to 5dp instead of 2: at 2dp, the fine volume steps the
+  // chart samples at often land on the same cent, producing visible flat
+  // steps in the effective-cost/use line rather than a smooth curve.
   function round2(n) {
     return Math.round((n + Number.EPSILON) * 100) / 100;
+  }
+  function round5(n) {
+    return Math.round((n + Number.EPSILON) * 100000) / 100000;
   }
 
   // breakdown lists only the tiers that actually absorbed some usage at this
@@ -828,7 +835,7 @@
     tieredCost = round2(tieredCost);
     const minApplied = minInvoice > 0 && tieredCost < minInvoice;
     const cost = minApplied ? minInvoice : tieredCost;
-    const effectiveRate = volume > 0 ? round2(cost / volume) : 0;
+    const effectiveRate = volume > 0 ? round5(cost / volume) : 0;
     return { volume, tieredCost, cost, effectiveRate, breakdown, minApplied };
   }
 
