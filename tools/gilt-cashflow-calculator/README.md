@@ -51,18 +51,30 @@ fake precision, not a genuine illustration.
 
 Given a gilt, a cash amount, and a settlement date (defaults to tomorrow):
 
-1. **Nominal purchased** = `investment × 100 / price` (price is quoted per
-   £100 nominal).
-2. **Coupons**: UK gilts pay semi-annually. A coupon is included only if
+1. **Accrued interest**: quoted gilt prices (LSE, DMO, everywhere) are
+   always the *clean* price — they exclude interest accrued since the last
+   coupon date. Since almost every real purchase happens between coupon
+   dates, the actual cost per £100 nominal is the *dirty* price = clean
+   price + accrued interest, computed Actual/Actual (the UK gilt
+   convention): `couponPercent / 2 × (days since last coupon) / (days in
+   current coupon period)`. `computeCashflows` uses the dirty price
+   throughout; `calc.test.js` checks it against a hand-computed example.
+   (Earlier versions of this tool used the clean price directly, which
+   understated the true cost and overstated how much nominal a given
+   amount actually buys — a real bug, not just a simplification, fixed
+   once the yield calculation below made the discrepancy obvious.)
+2. **Nominal purchased** = `investment × 100 / dirtyPrice`.
+3. **Coupons**: UK gilts pay semi-annually. A coupon is included only if
    the settlement date is strictly before that coupon's own ex-dividend
    date (`data/gilts.json` publishes one per coupon) — otherwise it's
    already gone to whoever held the gilt at the ex-dividend date, and the
    buyer's first coupon is the following one. Each coupon paid =
    `nominal × couponPercent / 100 / 2` (half the annual rate, since it's
-   paid twice a year).
-3. **Redemption**: conventional gilts redeem at par — 100% of nominal — on
+   paid twice a year) — the *full* coupon, even for the first one after a
+   mid-period purchase (see the Accrued Income Scheme note below).
+4. **Redemption**: conventional gilts redeem at par — 100% of nominal — on
    the redemption date, regardless of the price paid.
-4. **Tax split**:
+5. **Tax split**:
    - *Capital element* = `redemption amount − amount invested`. This is
      **exempt from Capital Gains Tax** under
      [TCGA 1992 s.115](https://www.gov.uk/guidance/gilt-edged-securities-exempt-from-capital-gains-tax)
@@ -74,10 +86,56 @@ Given a gilt, a cash amount, and a settlement date (defaults to tomorrow):
      an actual tax bill, since that depends on the Personal Savings
      Allowance and the starting rate for savings, both of which depend on
      the holder's *other* income, which this tool has no visibility into.
+   - **Not modelled**: HMRC's Accrued Income Scheme (ITA 2007, Part 12)
+     means the pre-purchase slice of a mid-period buyer's first coupon is
+     actually taxed as the *seller's* income, not the buyer's. This tool
+     shows the full first coupon as the buyer's taxable income, which
+     overstates it slightly for the first coupon only — implementing AIS
+     properly (including its seller-side mechanics) was judged out of
+     scope for an illustrative tool, but is disclosed in-page.
 
 An invariant checked in `calc.test.js`: `total received = invested +
 capital gain + coupon income`, exactly — nothing is created or destroyed,
 only the cashflow's tax character differs.
+
+## Yield to maturity
+
+`GiltCalc.estimateYield` computes the gross redemption yield: the single
+semi-annually-compounded rate at which the present value of every
+remaining cashflow (against the dirty price) equals what you'd pay today.
+Solved with Newton-Raphson (bond price-vs-yield is smooth and monotonic,
+so it converges in a handful of iterations). This is a genuinely different
+number from the printed coupon rate — a low-coupon gilt trading well below
+par can yield more than its coupon suggests — which is why the UI offers
+yield as a separate filter from coupon size.
+
+Sanity-checking this against real data during development surfaced a
+gilt (`0 3/4% TREASURY GILT 22/11/33`) whose LSE price implied a yield
+~3.5 points below every neighbouring gilt on the curve — a fair price at
+the prevailing ~5% yield would be roughly £75, not the ~£95 LSE was
+quoting. That looks like a stale/illiquid quote on LSE's side (this gilt
+trades thinly), not a bug here — but it's a reminder that the yield
+figure is only as good as the underlying delayed LSE price already
+disclaimed in-tool.
+
+## Filters
+
+The gilt picker can be narrowed by three independent (AND-combined) chip
+filters, each single-select with an "All" reset:
+
+- **Time to maturity**: `<2y / 2–5y / 5–10y / 10–20y / 20–30y / 30y+` —
+  boundaries chosen because they split the live gilt list roughly evenly.
+- **Coupon rate**: `<2% / 2–4% / 4–6% / 6%+` — the live list's coupon
+  rates are genuinely bimodal (a low-rate-era cluster under 2%, a
+  recent-issuance cluster around 4–4.5%), so these buckets follow that
+  shape rather than slicing evenly.
+- **Yield to maturity**: `<4.5% / 4.5–5% / 5–5.5% / 5.5%+` — the live
+  list's yields cluster tightly in roughly a 1-point band.
+
+All three are computed once per gilt against tomorrow's settlement date
+when the data loads (used only for bucketing/browsing); the actual
+calculation always re-computes against whichever settlement date is
+selected.
 
 ## Testing
 

@@ -35,13 +35,19 @@ var GILT = {
   ]
 };
 
+// 2026-06-07 is exactly the previous coupon date implied by the first
+// schedule entry (2026-12-07, 6 months later) — settling exactly on a
+// coupon date means zero accrued interest, so clean price == dirty price
+// and these identities hold exactly.
+var ZERO_ACCRUED_SETTLEMENT = "2026-06-07";
+
 test("nominal is derived from investment amount and price (price per £100 nominal)", function () {
-  var result = GiltCalc.computeCashflows(GILT, 1000, "2026-09-22", 100);
+  var result = GiltCalc.computeCashflows(GILT, 1000, ZERO_ACCRUED_SETTLEMENT, 100);
   approx(result.nominal, 1000); // at par, £1000 buys £1000 nominal
 });
 
 test("buying below par: nominal exceeds cash invested", function () {
-  var result = GiltCalc.computeCashflows(GILT, 1000, "2026-09-22", 50);
+  var result = GiltCalc.computeCashflows(GILT, 1000, ZERO_ACCRUED_SETTLEMENT, 50);
   approx(result.nominal, 2000); // half price -> double the nominal
 });
 
@@ -75,7 +81,7 @@ test("settling the day before the ex-dividend date includes that coupon", functi
 });
 
 test("coupon amount is half the annual rate applied to nominal (semi-annual payments)", function () {
-  var result = GiltCalc.computeCashflows(GILT, 1000, "2026-09-22", 100);
+  var result = GiltCalc.computeCashflows(GILT, 1000, ZERO_ACCRUED_SETTLEMENT, 100);
   var firstCoupon = result.cashflows.find(function (c) { return c.type === "coupon"; });
   approx(firstCoupon.amount, 1000 * 0.0425 / 2); // 21.25
 });
@@ -123,4 +129,64 @@ test("throws on non-positive investment amount", function () {
   assert.throws(function () {
     GiltCalc.computeCashflows(GILT, 0, "2026-09-22", 100);
   });
+});
+
+// =====================================================================
+// accruedInterestPercent / dirty price
+// =====================================================================
+
+test("accrued interest is zero exactly on a coupon date", function () {
+  approx(GiltCalc.accruedInterestPercent(GILT, ZERO_ACCRUED_SETTLEMENT), 0);
+});
+
+test("accrued interest matches a hand-computed Actual/Actual example", function () {
+  // Period is 2026-06-07 -> 2026-12-07 (183 days). Settling 2026-09-22 is
+  // 107 days into that period.
+  var accrued = GiltCalc.accruedInterestPercent(GILT, "2026-09-22");
+  approx(accrued, (4.25 / 2) * (107 / 183), 0.0001);
+});
+
+test("computeCashflows' dirtyPrice and accruedInterest are consistent with nominal", function () {
+  var result = GiltCalc.computeCashflows(GILT, 1000, "2026-09-22", 99.715);
+  approx(result.dirtyPrice, result.cleanPrice + GiltCalc.accruedInterestPercent(GILT, "2026-09-22"));
+  approx(result.accruedInterest, (result.nominal * GiltCalc.accruedInterestPercent(GILT, "2026-09-22")) / 100);
+  approx(result.nominal, (1000 * 100) / result.dirtyPrice);
+});
+
+// =====================================================================
+// estimateYield (gross redemption yield)
+// =====================================================================
+
+test("yield equals coupon rate for a bond priced exactly at par with zero accrued interest", function () {
+  var y = GiltCalc.estimateYield(GILT, ZERO_ACCRUED_SETTLEMENT, 100);
+  approx(y, 0.0425, 0.001);
+});
+
+test("yield is higher when the price is lower, all else equal", function () {
+  var yLow = GiltCalc.estimateYield(GILT, "2026-09-22", 90);
+  var yHigh = GiltCalc.estimateYield(GILT, "2026-09-22", 110);
+  assert.ok(yLow > yHigh);
+});
+
+test("round-trips exactly against a closed-form single-cashflow (zero-coupon-like) price", function () {
+  var settlementDate = "2026-09-22";
+  var couponDate = "2027-09-22";
+  var zeroCouponGilt = {
+    couponPercent: 0,
+    redemptionDate: couponDate,
+    price: { mid: 0 }, // unused, priceOverride is always passed below
+    couponSchedule: [{ couponDate: couponDate, exDividendDate: "2027-09-13", isFinal: true }]
+  };
+
+  var targetYield = 0.05;
+  var t = (new Date(couponDate) - new Date(settlementDate)) / (1000 * 60 * 60 * 24 * 365.25);
+  var price = 100 * Math.pow(1 + targetYield / 2, -2 * t);
+
+  var y = GiltCalc.estimateYield(zeroCouponGilt, settlementDate, price);
+  approx(y, targetYield, 0.00001);
+});
+
+test("returns null when there are no remaining cashflows", function () {
+  var maturedGilt = { couponPercent: 4, couponSchedule: [] };
+  assert.equal(GiltCalc.estimateYield(maturedGilt, "2026-09-22", 100), null);
 });
