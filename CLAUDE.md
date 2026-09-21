@@ -85,6 +85,18 @@ split when a tool has non-trivial calculation logic (tax/finance rules, hash
 algorithms) worth locking down with boundary/threshold tests; skip it for
 simple, easily-eyeballed UI logic.
 
+**Cache-bust every `<script src>` referencing one of these files**: `<script
+src="calc.js?v=1"></script>`, bumping the `?v=` number any time that file's
+*content* changes. GitHub Pages serves these with `Cache-Control: max-age=600`,
+and some browsers (confirmed: Safari) can keep serving a cached copy of a
+sub-resource like this well past that, independent of the page itself being
+hard-reloaded — a visitor who'd loaded the page before an edit can get a
+"such-and-such is not a function" error indefinitely, with no reload fixing
+it, because the *page* re-fetches but the *script* doesn't. Bumping `?v=`
+makes the edit a genuinely new URL, which forces every browser to fetch it
+fresh regardless of anything already cached. This bit us once already (see
+git history on `gilt-cashflow-calculator/index.html`) — don't skip it.
+
 ## Domain-specific tools
 
 Some tools encode real-world rules that change over time (UK tax years, NIC
