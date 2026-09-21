@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Gilt Cashflow &amp; Tax Calculator — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+    --bad: #dc2626;
+    --good: #16a34a;
+    --warn-bg: #fffbeb;
+    --warn-border: #f59e0b;
+    --warn-fg: #92400e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+      --bad: #f87171;
+      --good: #4ade80;
+      --warn-bg: #2a2210;
+      --warn-border: #b45309;
+      --warn-fg: #fbbf24;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main { width: 100%; max-width: 780px; }
+  a.back { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 1.4rem; margin: 0.75rem 0 0.3rem; }
+  p.sub { color: var(--muted); font-size: 0.9rem; margin-top: 0; margin-bottom: 1rem; }
+
+  .disclaimer {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    color: var(--warn-fg);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+  }
+  .disclaimer strong { display: block; margin-bottom: 0.25rem; font-size: 0.9rem; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  select, input {
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--fg);
+    margin-bottom: 1rem;
+    font-family: inherit;
+  }
+  .field-note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: -0.7rem;
+    margin-bottom: 1rem;
+  }
+  .error {
+    color: var(--bad);
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+  }
+  .stat .label { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.2rem; }
+  .stat .value { font-size: 1.25rem; font-weight: 600; }
+
+  .tax-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .tax-card {
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--border);
+  }
+  .tax-card.free { background: color-mix(in srgb, var(--good) 12%, var(--surface)); border-color: var(--good); }
+  .tax-card.taxable { background: color-mix(in srgb, var(--warn-border) 12%, var(--surface)); border-color: var(--warn-border); }
+  .tax-card .label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.15rem; }
+  .tax-card .value { font-size: 1.3rem; font-weight: 700; }
+  .tax-card .note { font-size: 0.78rem; color: var(--muted); margin-top: 0.4rem; line-height: 1.4; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; font-size: 0.8rem; }
+  td.amount, th.amount { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.redemption td { font-weight: 600; }
+  .pill {
+    display: inline-block;
+    font-size: 0.72rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .pill.taxable { background: color-mix(in srgb, var(--warn-border) 20%, transparent); color: var(--warn-fg); }
+  .pill.free { background: color-mix(in srgb, var(--good) 20%, transparent); color: var(--good); }
+
+  footer.data-source {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: 1.5rem;
+  }
+  footer.data-source a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>Gilt Cashflow &amp; Tax Calculator</h1>
+  <p class="sub">Pick a gilt, enter an amount, see every cashflow to redemption — and how much of any gain is tax-free capital vs taxable coupon income.</p>
+
+  <div class="disclaimer" role="note">
+    <strong>Illustrative estimator only — not investment or tax advice.</strong>
+    Prices are from the London Stock Exchange, delayed at least 15 minutes and refreshed once daily — not a live dealing price. Excludes any bid/offer spread and broker/platform fees. Confirm the actual price with your broker before dealing. Only conventional (fixed-coupon) gilts are covered — index-linked gilts' future coupons and redemption value depend on RPI inflation between now and each payment date, which can't be projected here.
+  </div>
+
+  <div class="card">
+    <label for="giltSelect">Gilt</label>
+    <select id="giltSelect"><option value="">Loading gilt list…</option></select>
+    <div class="field-note" id="giltMeta"></div>
+
+    <label for="amount">Amount to invest tomorrow (£, excluding fees)</label>
+    <input id="amount" type="number" min="1" step="1" placeholder="e.g. 10000">
+
+    <label for="settlementDate">Settlement date</label>
+    <input id="settlementDate" type="date">
+    <div class="field-note">Defaults to tomorrow. Change it to see the cashflows from a different purchase date — e.g. dealing right after an ex-dividend date instead of before it.</div>
+
+    <div class="error" id="formError" hidden></div>
+  </div>
+
+  <div id="results" hidden>
+    <div class="summary-grid">
+      <div class="stat"><div class="label">Amount invested</div><div class="value" id="statInvested">—</div></div>
+      <div class="stat"><div class="label">Nominal purchased</div><div class="value" id="statNominal">—</div></div>
+      <div class="stat"><div class="label">Total received to redemption</div><div class="value" id="statReceived">—</div></div>
+      <div class="stat"><div class="label">Net gain / loss</div><div class="value" id="statNet">—</div></div>
+    </div>
+
+    <div class="tax-grid">
+      <div class="tax-card free">
+        <div class="label">Capital element — tax-free</div>
+        <div class="value" id="taxCapital">—</div>
+        <div class="note">Gilts are exempt from Capital Gains Tax on disposal or redemption (<a href="https://www.gov.uk/guidance/gilt-edged-securities-exempt-from-capital-gains-tax" target="_blank" rel="noopener">TCGA 1992 s.115</a>) — whether this is a gain (bought below par) or a loss (bought above par).</div>
+      </div>
+      <div class="tax-card taxable">
+        <div class="label">Coupon income — taxable</div>
+        <div class="value" id="taxIncome">—</div>
+        <div class="note">Taxed as savings income at your marginal rate. Your Personal Savings Allowance (£1,000 basic rate / £500 higher rate / £0 additional rate) and the starting rate for savings may cover some or all of it — not modelled here since it depends on your other income.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Payment</th>
+            <th class="amount">Amount</th>
+            <th>Tax treatment</th>
+          </tr>
+        </thead>
+        <tbody id="cashflowRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer class="data-source" id="dataSource"></footer>
+</main>
+
+<script src="calc.js"></script>
+<script>
+  const GBP = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 2 });
+  const DATE_FMT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
+
+  function fmtMoney(n) { return GBP.format(n); }
+  function fmtDate(iso) { return DATE_FMT.format(new Date(iso + "T00:00:00Z")); }
+  function tomorrowIso() {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+
+  const giltSelect = document.getElementById("giltSelect");
+  const giltMeta = document.getElementById("giltMeta");
+  const amountInput = document.getElementById("amount");
+  const settlementInput = document.getElementById("settlementDate");
+  const formError = document.getElementById("formError");
+  const results = document.getElementById("results");
+  const dataSource = document.getElementById("dataSource");
+
+  const tomorrow = tomorrowIso();
+  settlementInput.value = tomorrow;
+  settlementInput.min = tomorrow;
+
+  let gilts = [];
+
+  fetch("../../data/gilts.json")
+    .then((r) => {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then((data) => {
+      gilts = data.gilts
+        .filter((g) => !g.indexLinked)
+        .slice()
+        .sort((a, b) => a.redemptionDate.localeCompare(b.redemptionDate));
+
+      giltSelect.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Select a gilt…";
+      giltSelect.appendChild(placeholder);
+
+      gilts.forEach((g, i) => {
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        opt.textContent = g.name + " — redeems " + fmtDate(g.redemptionDate) + " — price " + g.price.mid.toFixed(3);
+        giltSelect.appendChild(opt);
+      });
+
+      const asOf = new Date(data.asOf);
+      dataSource.innerHTML =
+        "Gilt list and prices: <a href=\"https://www.londonstockexchange.com/live-markets/market-data-dashboard/price-explorer?categories=BONDS&subcategories=14\" target=\"_blank\" rel=\"noopener\">London Stock Exchange Price Explorer</a>, refreshed daily — data as of " +
+        asOf.toLocaleString("en-GB") +
+        ". " +
+        gilts.length +
+        " conventional gilts (index-linked excluded). " +
+        data.source.exDividendRule;
+
+      update();
+    })
+    .catch((err) => {
+      giltSelect.innerHTML = "<option value=\"\">Failed to load gilt data</option>";
+      dataSource.textContent = "Couldn't load data/gilts.json: " + err.message;
+    });
+
+  function selectedGilt() {
+    const i = giltSelect.value;
+    return i === "" ? null : gilts[Number(i)];
+  }
+
+  function update() {
+    formError.hidden = true;
+    formError.textContent = "";
+    results.hidden = true;
+
+    const gilt = selectedGilt();
+    if (!gilt) {
+      giltMeta.textContent = "";
+      return;
+    }
+    giltMeta.textContent =
+      "ISIN " + gilt.isin + " · coupon " + gilt.couponPercent + "% · mid price " + gilt.price.mid.toFixed(3) +
+      " (last " + gilt.price.last.toFixed(3) + ")";
+
+    const amount = parseFloat(amountInput.value);
+    const settlementDate = settlementInput.value;
+
+    if (!(amount > 0) || !settlementDate) return;
+
+    let result;
+    try {
+      result = GiltCalc.computeCashflows(gilt, amount, settlementDate);
+    } catch (err) {
+      formError.textContent = err.message;
+      formError.hidden = false;
+      return;
+    }
+
+    document.getElementById("statInvested").textContent = fmtMoney(result.totals.invested);
+    document.getElementById("statNominal").textContent = fmtMoney(result.nominal) + " nominal";
+    document.getElementById("statReceived").textContent = fmtMoney(result.totals.totalReceived);
+    const netEl = document.getElementById("statNet");
+    netEl.textContent = fmtMoney(result.totals.netGainLoss);
+    netEl.style.color = result.totals.netGainLoss >= 0 ? "var(--good)" : "var(--bad)";
+
+    document.getElementById("taxCapital").textContent = fmtMoney(result.totals.capitalGain);
+    document.getElementById("taxIncome").textContent = fmtMoney(result.totals.couponIncomeTotal);
+
+    const rows = document.getElementById("cashflowRows");
+    rows.innerHTML = "";
+    result.cashflows.forEach((cf) => {
+      const tr = document.createElement("tr");
+      if (cf.type === "redemption") tr.className = "redemption";
+      tr.innerHTML =
+        "<td>" + fmtDate(cf.date) + "</td>" +
+        "<td>" + (cf.type === "coupon" ? "Coupon" : "Redemption (nominal at par)") + "</td>" +
+        "<td class=\"amount\">" + fmtMoney(cf.amount) + "</td>" +
+        "<td><span class=\"pill " + (cf.taxable ? "taxable" : "free") + "\">" + (cf.taxable ? "Taxable income" : "Tax-free capital") + "</span></td>";
+      rows.appendChild(tr);
+    });
+
+    results.hidden = false;
+  }
+
+  giltSelect.addEventListener("change", update);
+  amountInput.addEventListener("input", update);
+  settlementInput.addEventListener("input", update);
+</script>
+</body>
+</html>
