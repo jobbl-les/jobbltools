@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Gilt Ladder Calculator — tools</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --card: #f5f5f7;
+    --border: #ddd;
+    --accent: #2563eb;
+    --surface: #fcfcfb;
+    --bad: #dc2626;
+    --good: #16a34a;
+    --warn-bg: #fffbeb;
+    --warn-border: #f59e0b;
+    --warn-fg: #92400e;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --series-1: #2a78d6;
+    --series-2: #16a34a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121212;
+      --fg: #f0f0f0;
+      --muted: #999;
+      --card: #1e1e1e;
+      --border: #333;
+      --accent: #60a5fa;
+      --surface: #1a1a19;
+      --bad: #f87171;
+      --good: #4ade80;
+      --warn-bg: #2a2210;
+      --warn-border: #b45309;
+      --warn-fg: #fbbf24;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --series-1: #3987e5;
+      --series-2: #4ade80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  main { width: 100%; max-width: 900px; }
+  a.back { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 1.4rem; margin: 0.75rem 0 0.3rem; }
+  h2 { font-size: 1.05rem; margin: 1.75rem 0 0.6rem; }
+  p.sub { color: var(--muted); font-size: 0.9rem; margin-top: 0; margin-bottom: 1rem; }
+
+  .disclaimer {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    color: var(--warn-fg);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.83rem;
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+  }
+  .disclaimer strong { display: block; margin-bottom: 0.25rem; font-size: 0.9rem; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card h3 { margin: 0 0 0.9rem; font-size: 0.95rem; }
+  .field-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0 1rem;
+  }
+  label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.3rem; }
+  select, input {
+    width: 100%;
+    padding: 0.55rem 0.65rem;
+    font-size: 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--fg);
+    margin-bottom: 0.9rem;
+    font-family: inherit;
+  }
+  input[type="range"] { padding: 0; }
+  input[type="checkbox"] { width: auto; margin-right: 0.4rem; }
+  textarea {
+    width: 100%;
+    min-height: 3.2rem;
+    padding: 0.55rem 0.65rem;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--fg);
+    margin-bottom: 0.4rem;
+    font-family: inherit;
+    resize: vertical;
+  }
+  .field-note { font-size: 0.78rem; color: var(--muted); margin-top: -0.6rem; margin-bottom: 0.9rem; line-height: 1.4; }
+  .checkbox-row { display: flex; align-items: center; margin-bottom: 0.9rem; font-size: 0.9rem; }
+  .checkbox-row label { margin: 0; color: var(--fg); }
+  .slider-row { margin-bottom: 0.4rem; }
+  .slider-labels { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-top: -0.5rem; margin-bottom: 0.9rem; }
+
+  .error { color: var(--bad); font-size: 0.85rem; margin-bottom: 1rem; }
+  .warnings {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    color: var(--warn-fg);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+  .warnings ul { margin: 0.25rem 0 0; padding-left: 1.2rem; }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1rem; }
+  .stat .label { font-size: 0.76rem; color: var(--muted); margin-bottom: 0.2rem; }
+  .stat .value { font-size: 1.2rem; font-weight: 600; }
+  .stat .note { font-size: 0.72rem; color: var(--muted); margin-top: 0.25rem; line-height: 1.3; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 500; font-size: 0.76rem; }
+  td.amount, th.amount { text-align: right; font-variant-numeric: tabular-nums; }
+  .table-scroll { overflow-x: auto; }
+  tr.redemption td, tr.reinvestment td { font-weight: 600; }
+  .pill { display: inline-block; font-size: 0.68rem; padding: 0.1rem 0.45rem; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+  .pill.coupon { background: color-mix(in srgb, var(--series-2) 20%, transparent); color: var(--series-2); }
+  .pill.redemption { background: color-mix(in srgb, var(--series-1) 20%, transparent); color: var(--series-1); }
+  .pill.reinvestment { background: color-mix(in srgb, var(--warn-border) 20%, transparent); color: var(--warn-fg); }
+
+  .chart-wrap { position: relative; margin-top: 0.25rem; margin-bottom: 0.5rem; }
+  svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+  .axis-title { font-size: 12px; fill: var(--muted); }
+  .tick-label { font-size: 10.5px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .axis-line { stroke: var(--axis); stroke-width: 1; }
+  .chart-legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); margin: 0.25rem 0 0.75rem; }
+  .chart-legend .key { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .chart-legend .dot { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+  footer.data-source, .assumptions { font-size: 0.78rem; color: var(--muted); line-height: 1.6; margin-top: 1.5rem; }
+  footer.data-source a { color: inherit; }
+  .assumptions h3 { font-size: 0.85rem; color: var(--fg); margin: 1rem 0 0.3rem; }
+  .assumptions ul { margin: 0.25rem 0; padding-left: 1.2rem; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../../index.html">&larr; tools</a>
+  <h1>Gilt Ladder Calculator</h1>
+  <p class="sub">Build an illustrative UK gilt ladder — staggered maturities and coupon dates — from a lump sum, then see the full buy instructions and cash-flow schedule.</p>
+
+  <div class="disclaimer" role="note">
+    <strong>Illustrative planning tool — not investment or tax advice, not a dealing ticket.</strong>
+    The "buy instructions" below are a proposed allocation against a price snapshot, not a live order. Prices come from the same daily London Stock Exchange snapshot used by the
+    <a href="../gilt-cashflow-calculator/">Gilt Cashflow &amp; Tax Calculator</a> — see the data timestamp at the bottom of the page. Dealing/platform charges are excluded entirely from every figure here; at smaller ladder sizes with many rungs, per-line dealing costs are exactly where a real ladder becomes less attractive than this projection suggests. Only conventional (fixed-coupon) gilts are considered — index-linked gilts are excluded because their future coupons depend on RPI inflation between now and each payment date, which can't be projected deterministically. Selection uses a greedy heuristic, not a formal optimiser — see "How this works" at the bottom of the page.
+  </div>
+
+  <div class="card">
+    <h3>Investment &amp; horizon</h3>
+    <div class="field-row">
+      <div>
+        <label for="amount">Investment amount (£)</label>
+        <input id="amount" type="number" min="1000" step="500" value="60000">
+      </div>
+      <div>
+        <label for="settlementDate">Settlement date</label>
+        <input id="settlementDate" type="date">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label for="horizonMode">Time horizon</label>
+        <select id="horizonMode">
+          <option value="years">Fixed length (years from settlement)</option>
+          <option value="date">Explicit end date</option>
+        </select>
+      </div>
+      <div id="horizonYearsField">
+        <label for="horizonYears">Ladder length (years)</label>
+        <input id="horizonYears" type="number" min="1" max="40" step="1" value="10">
+      </div>
+      <div id="horizonDateField" hidden>
+        <label for="horizonEndDate">Horizon end date</label>
+        <input id="horizonEndDate" type="date">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Rungs &amp; objective</h3>
+    <div class="field-row">
+      <div>
+        <label for="minRungs">Minimum number of rungs</label>
+        <input id="minRungs" type="number" min="1" max="40" step="1" value="5">
+      </div>
+      <div>
+        <label for="maxRungs">Maximum number of rungs</label>
+        <input id="maxRungs" type="number" min="1" max="40" step="1" value="8">
+      </div>
+    </div>
+    <div class="field-note">Set both to the same value for a fixed rung count. The builder always uses the maximum count the position-size constraints below allow — more rungs only improves calendar spread and granularity in this model, since dealing costs aren't modelled (see disclaimer).</div>
+
+    <div class="slider-row">
+      <label for="objectiveSlider">Selection objective</label>
+      <input id="objectiveSlider" type="range" min="0" max="100" step="5" value="50">
+    </div>
+    <div class="slider-labels"><span>Yield &amp; total return</span><span id="objectiveValue">Balanced (50)</span><span>Income frequency</span></div>
+
+    <div class="field-row">
+      <div>
+        <label for="accountType">Account type (tax treatment)</label>
+        <select id="accountType">
+          <option value="taxable">Taxable (general/dealing account)</option>
+          <option value="isa">ISA</option>
+          <option value="sipp">SIPP</option>
+        </select>
+      </div>
+      <div>
+        <label for="rungSizing">Rung sizing</label>
+        <select id="rungSizing">
+          <option value="equal">Equal nominal per rung</option>
+          <option value="weighted">Weighted toward higher-return rungs</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-note" id="accountTypeNote"></div>
+
+    <div class="field-row">
+      <div>
+        <label for="ladderType">Ladder type</label>
+        <select id="ladderType">
+          <option value="terminal">Terminal — winds down, returns capital by the horizon end</option>
+          <option value="rolling">Rolling — matured rungs are reinvested to roughly maintain length</option>
+        </select>
+      </div>
+      <div>
+        <div class="checkbox-row" style="margin-top: 1.75rem;">
+          <input type="checkbox" id="reinvestCoupons">
+          <label for="reinvestCoupons">Reinvest coupon income (rather than taking it as spendable cash)</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Constraints</h3>
+    <div class="field-row">
+      <div>
+        <label for="roundingUnit">Round each rung's nominal to nearest</label>
+        <select id="roundingUnit">
+          <option value="100">£100</option>
+          <option value="1000" selected>£1,000</option>
+          <option value="5000">£5,000</option>
+          <option value="10000">£10,000</option>
+        </select>
+      </div>
+      <div>
+        <label for="minNominalPerRung">Minimum nominal per rung (£, optional)</label>
+        <input id="minNominalPerRung" type="number" min="0" step="500" placeholder="No minimum">
+      </div>
+      <div>
+        <label for="maxNominalPerRung">Maximum nominal per rung (£, optional)</label>
+        <input id="maxNominalPerRung" type="number" min="0" step="500" placeholder="No maximum">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div>
+        <label for="durationCapYears">Treat maturities beyond this as "long-dated" (years, optional)</label>
+        <input id="durationCapYears" type="number" min="1" step="1" placeholder="No cap">
+      </div>
+      <div>
+        <label for="durationCapPercent">Max % of capital in long-dated gilts (optional)</label>
+        <input id="durationCapPercent" type="number" min="0" max="100" step="5" placeholder="No cap">
+      </div>
+    </div>
+    <div class="field-note">Both fields must be set for the duration cap to apply — it limits rate/price risk independently of the yield objective above.</div>
+
+    <label for="excludeIsins">Exclude gilts (ISIN, one per line or comma-separated — e.g. already held elsewhere)</label>
+    <textarea id="excludeIsins" placeholder="GB00BNNGP668, GB00BMBL1D50"></textarea>
+  </div>
+
+  <div class="error" id="formError" hidden></div>
+  <div class="warnings" id="warnings" hidden></div>
+
+  <div id="results" hidden>
+    <h2>Summary</h2>
+    <div class="summary-grid" id="summaryGrid"></div>
+
+    <h2>Buy instructions</h2>
+    <p class="field-note" id="buyInstructionsNote"></p>
+    <div class="card table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Gilt</th><th>ISIN</th><th>Coupon</th><th>Redemption</th>
+            <th class="amount">Nominal</th><th class="amount">Clean price</th>
+            <th class="amount">Accrued</th><th class="amount">Dirty price</th>
+            <th class="amount">Cost</th><th class="amount">Cumulative</th>
+          </tr>
+        </thead>
+        <tbody id="buyRows"></tbody>
+      </table>
+    </div>
+
+    <h2>Maturity ladder</h2>
+    <div class="chart-wrap"><svg class="chart" id="ladderChart" viewBox="0 0 820 300" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+    <h2>Income over time</h2>
+    <div class="chart-legend">
+      <span class="key"><span class="dot" style="background:var(--series-2);"></span> Coupon income</span>
+      <span class="key"><span class="dot" style="background:var(--series-1);"></span> Capital returned (redemptions)</span>
+    </div>
+    <div class="chart-wrap"><svg class="chart" id="incomeChart" viewBox="0 0 820 320" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+    <h2>Cash-flow schedule</h2>
+    <div class="card table-scroll" style="max-height: 420px; overflow-y: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Event</th><th>Gilt</th>
+            <th class="amount">Amount</th><th class="amount">Cumulative income</th><th class="amount">Cumulative capital returned</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="assumptions">
+    <h3>How this works</h3>
+    <ul>
+      <li><strong>Selection is a greedy heuristic, not a formal optimiser.</strong> A proper constrained optimisation (LP/MILP) over gilt selection + weighting would be strictly more optimal, especially once frequency and yield are blended, but needs a solver this static, no-build, no-dependency site doesn't have. Instead, each rung is filled slot-by-slot (evenly spaced target maturities across the horizon), scoring candidates on maturity fit, return, and whether they add a new coupon-month to the ladder — see <code>ladder-calc.js</code> for the exact scoring.</li>
+      <li><strong>Tax treatment is a heuristic tilt, not a real after-tax calculation.</strong> Gilts are exempt from Capital Gains Tax on redemption (<a href="https://www.gov.uk/guidance/gilt-edged-securities-exempt-from-capital-gains-tax" target="_blank" rel="noopener">TCGA 1992 s.115</a>); coupon income is taxable as savings income outside a wrapper. For a taxable account, selection favours annualised capital-gain-to-maturity over yield-to-maturity (a fixed 70/30 tilt); ISA/SIPP accounts see no tilt since neither component is taxed there. This doesn't know your marginal rate or use any actual allowance figures.</li>
+      <li><strong>Rolling ladders reinvest at today's snapshot price.</strong> When a rung matures before the horizon end, its proceeds are modelled as immediately redeployed into a new gilt targeting a similarly-spaced future maturity — using that gilt's current price, since no future price is knowable. The still-open position at the horizon end is reported separately, not forced to a fictitious final redemption.</li>
+      <li><strong>HMRC's Accrued Income Scheme isn't modelled</strong> — every coupon shown as receivable is shown in full, though in reality the pre-purchase slice of a mid-period buyer's first coupon is taxed as the seller's income, not the buyer's (same simplification as the Gilt Cashflow &amp; Tax Calculator).</li>
+      <li><strong>Blended yield-to-maturity/IRR</strong> is solved across every buy cost and every projected cashflow at once (semi-annual compounding), not just an average of each gilt's own yield. For a rolling ladder, any position still open at the horizon end is marked to market at today's snapshot price on that date (not assumed to be worth its full face value, since it hasn't matured yet) purely so a single comparable figure exists — it isn't a realised cashflow.</li>
+    </ul>
+  </div>
+
+  <footer class="data-source" id="dataSource"></footer>
+</main>
+
+<script src="ladder-calc.js?v=1"></script>
+<script>
+  const GBP = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 2 });
+  const GBP0 = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 });
+  const DATE_FMT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const SVG_NS = "http://www.w3.org/2000/svg";
+
+  function fmtMoney(n) { return GBP.format(n); }
+  function fmtMoney0(n) { return GBP0.format(n); }
+  function fmtDate(iso) { return DATE_FMT.format(new Date(iso + "T00:00:00Z")); }
+  function fmtPct(x, digits) { return x === null || x === undefined ? "—" : (x * 100).toFixed(digits === undefined ? 2 : digits) + "%"; }
+  function tomorrowIso() {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+  function addDaysISO(iso, days) {
+    const d = new Date(iso + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() + Math.round(days));
+    return d.toISOString().slice(0, 10);
+  }
+  function el(tag, attrs) {
+    const e = document.createElementNS(SVG_NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  const amountInput = document.getElementById("amount");
+  const settlementInput = document.getElementById("settlementDate");
+  const horizonMode = document.getElementById("horizonMode");
+  const horizonYearsField = document.getElementById("horizonYearsField");
+  const horizonDateField = document.getElementById("horizonDateField");
+  const horizonYears = document.getElementById("horizonYears");
+  const horizonEndDate = document.getElementById("horizonEndDate");
+  const minRungsInput = document.getElementById("minRungs");
+  const maxRungsInput = document.getElementById("maxRungs");
+  const objectiveSlider = document.getElementById("objectiveSlider");
+  const objectiveValue = document.getElementById("objectiveValue");
+  const accountTypeSelect = document.getElementById("accountType");
+  const accountTypeNote = document.getElementById("accountTypeNote");
+  const rungSizingSelect = document.getElementById("rungSizing");
+  const ladderTypeSelect = document.getElementById("ladderType");
+  const reinvestCouponsInput = document.getElementById("reinvestCoupons");
+  const roundingUnitSelect = document.getElementById("roundingUnit");
+  const minNominalInput = document.getElementById("minNominalPerRung");
+  const maxNominalInput = document.getElementById("maxNominalPerRung");
+  const durationCapYearsInput = document.getElementById("durationCapYears");
+  const durationCapPercentInput = document.getElementById("durationCapPercent");
+  const excludeIsinsInput = document.getElementById("excludeIsins");
+
+  const formError = document.getElementById("formError");
+  const warningsEl = document.getElementById("warnings");
+  const results = document.getElementById("results");
+  const dataSource = document.getElementById("dataSource");
+
+  const tomorrow = tomorrowIso();
+  settlementInput.value = tomorrow;
+  settlementInput.min = tomorrow;
+  horizonEndDate.value = addDaysISO(tomorrow, 10 * 365.25);
+  horizonEndDate.min = tomorrow;
+
+  const ACCOUNT_NOTES = {
+    taxable: "Selection tilts toward low-coupon, below-par gilts (return skewed to tax-free capital uplift at maturity) over high-coupon gilts (return skewed to taxable coupon income).",
+    isa: "No tax treatment applies inside an ISA — selection weighs yield/return alone, with no tilt toward capital gain or coupon.",
+    sipp: "No tax treatment applies inside a SIPP — selection weighs yield/return alone, with no tilt toward capital gain or coupon."
+  };
+
+  let gilts = [];
+  let dataMeta = null;
+
+  horizonMode.addEventListener("change", () => {
+    const isYears = horizonMode.value === "years";
+    horizonYearsField.hidden = !isYears;
+    horizonDateField.hidden = isYears;
+    render();
+  });
+  accountTypeSelect.addEventListener("change", () => {
+    accountTypeNote.textContent = ACCOUNT_NOTES[accountTypeSelect.value] || "";
+    render();
+  });
+  objectiveSlider.addEventListener("input", () => {
+    const v = Number(objectiveSlider.value);
+    const label = v === 0 ? "Yield & total return only" : v === 100 ? "Income frequency only" : v < 50 ? "Leans yield/return (" + v + ")" : v > 50 ? "Leans frequency (" + v + ")" : "Balanced (50)";
+    objectiveValue.textContent = label;
+    render();
+  });
+
+  [amountInput, settlementInput, horizonYears, horizonEndDate, minRungsInput, maxRungsInput,
+   rungSizingSelect, ladderTypeSelect, reinvestCouponsInput, roundingUnitSelect,
+   minNominalInput, maxNominalInput, durationCapYearsInput, durationCapPercentInput, excludeIsinsInput
+  ].forEach((elm) => elm.addEventListener("input", render));
+
+  accountTypeNote.textContent = ACCOUNT_NOTES[accountTypeSelect.value];
+
+  fetch("../../data/gilts.json")
+    .then((r) => {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then((data) => {
+      gilts = data.gilts.filter((g) => !g.indexLinked);
+      dataMeta = data;
+      const asOf = new Date(data.asOf);
+      dataSource.innerHTML =
+        "Gilt list and prices: reused from the <a href=\"../gilt-cashflow-calculator/\">Gilt Cashflow &amp; Tax Calculator</a>'s <code>data/gilts.json</code> — " +
+        "<a href=\"https://www.londonstockexchange.com/live-markets/market-data-dashboard/price-explorer?categories=BONDS&subcategories=14\" target=\"_blank\" rel=\"noopener\">London Stock Exchange Price Explorer</a>, refreshed daily — data as of " +
+        asOf.toLocaleString("en-GB") + ". " + gilts.length + " conventional gilts available (index-linked excluded). " + data.source.exDividendRule;
+      render();
+    })
+    .catch((err) => {
+      dataSource.textContent = "Couldn't load data/gilts.json: " + err.message;
+      formError.textContent = "Gilt data failed to load — nothing can be built.";
+      formError.hidden = false;
+    });
+
+  function readParams() {
+    const settlementDate = settlementInput.value;
+    const horizonEnd = horizonMode.value === "years"
+      ? addDaysISO(settlementDate, Number(horizonYears.value || 0) * 365.25)
+      : horizonEndDate.value;
+    const excludeIsins = new Set(
+      excludeIsinsInput.value.split(/[\s,]+/).map((s) => s.trim().toUpperCase()).filter(Boolean)
+    );
+    const durationCapYears = durationCapYearsInput.value === "" ? null : Number(durationCapYearsInput.value);
+    const durationCapPercent = durationCapPercentInput.value === "" ? null : Number(durationCapPercentInput.value);
+    return {
+      investmentAmount: Number(amountInput.value || 0),
+      settlementDate: settlementDate,
+      horizonEnd: horizonEnd,
+      minRungs: Math.max(1, Number(minRungsInput.value || 1)),
+      maxRungs: Math.max(1, Number(maxRungsInput.value || 1)),
+      frequencyWeight: Number(objectiveSlider.value) / 100,
+      accountType: accountTypeSelect.value,
+      rungSizing: rungSizingSelect.value,
+      ladderType: ladderTypeSelect.value,
+      reinvestCoupons: reinvestCouponsInput.checked,
+      roundingUnit: Number(roundingUnitSelect.value),
+      minNominalPerRung: minNominalInput.value === "" ? null : Number(minNominalInput.value),
+      maxNominalPerRung: maxNominalInput.value === "" ? null : Number(maxNominalInput.value),
+      durationCapYears: (durationCapYears != null && durationCapPercent != null) ? durationCapYears : null,
+      durationCapPercent: (durationCapYears != null && durationCapPercent != null) ? durationCapPercent : null,
+      excludeIsins: excludeIsins
+    };
+  }
+
+  function render() {
+    formError.hidden = true;
+    formError.textContent = "";
+    warningsEl.hidden = true;
+    warningsEl.innerHTML = "";
+    results.hidden = true;
+
+    if (!gilts.length) return;
+
+    const params = readParams();
+    if (!(params.investmentAmount > 0)) { return; }
+    if (!params.settlementDate || !params.horizonEnd) { return; }
+    if (params.horizonEnd <= params.settlementDate) {
+      formError.textContent = "The horizon end must be after the settlement date.";
+      formError.hidden = false;
+      return;
+    }
+    if (params.minRungs > params.maxRungs) {
+      formError.textContent = "Minimum number of rungs can't exceed the maximum.";
+      formError.hidden = false;
+      return;
+    }
+
+    const ladder = GiltLadder.buildLadder(gilts, params);
+    if (!ladder.rungs.length) {
+      warningsEl.hidden = false;
+      warningsEl.innerHTML = "<strong>Couldn't build a ladder:</strong><ul>" + ladder.warnings.map((w) => "<li>" + w + "</li>").join("") + "</ul>";
+      return;
+    }
+    if (ladder.warnings.length) {
+      warningsEl.hidden = false;
+      warningsEl.innerHTML = "<strong>Notes on this ladder:</strong><ul>" + ladder.warnings.map((w) => "<li>" + w + "</li>").join("") + "</ul>";
+    }
+
+    const buyInstructions = GiltLadder.buildBuyInstructions(ladder.rungs, params);
+    const schedule = GiltLadder.projectSchedule(ladder.rungs, gilts, params);
+    const summary = GiltLadder.computeSummary(ladder.rungs, schedule, params);
+
+    renderSummary(summary, buyInstructions, params, ladder);
+    renderBuyInstructions(buyInstructions, params);
+    renderLadderChart(ladder.rungs, params);
+    renderIncomeChart(schedule.events, params);
+    renderSchedule(schedule.events);
+
+    results.hidden = false;
+  }
+
+  function stat(label, value, note) {
+    return "<div class=\"stat\"><div class=\"label\">" + label + "</div><div class=\"value\">" + value + "</div>" +
+      (note ? "<div class=\"note\">" + note + "</div>" : "") + "</div>";
+  }
+
+  function renderSummary(summary, buyInstructions, params, ladder) {
+    const grid = document.getElementById("summaryGrid");
+    let html = "";
+    html += stat("Rungs built", ladder.rungs.length + (ladder.requestedRungCount !== ladder.rungs.length ? " (of " + ladder.requestedRungCount + " requested)" : ""));
+    html += stat("Total deployed", fmtMoney0(buyInstructions.totalCost), "vs " + fmtMoney0(params.investmentAmount) + " requested (" + (buyInstructions.shortfall >= 0 ? "shortfall " : "overshoot ") + fmtMoney0(Math.abs(buyInstructions.shortfall)) + ")");
+    html += stat("Blended running yield", fmtPct(summary.blendedRunningYield), "annual coupon income ÷ total cost");
+    html += stat("Blended yield to maturity / IRR", fmtPct(summary.blendedIrr), "across every buy cost and projected cashflow");
+    html += stat("Income frequency achieved", summary.monthsWithPaymentsCount + " of 12 months", "calendar months with a payment in year one");
+    html += stat("Total coupon income (horizon)", fmtMoney0(summary.totalCouponIncome));
+    html += stat(
+      params.ladderType === "rolling" ? "Capital returned (not reinvested)" : "Total capital returned",
+      fmtMoney0(summary.totalCapitalReturned),
+      params.ladderType === "rolling" ? "matured capital is reinvested by default — see below" : null
+    );
+    if (params.ladderType === "rolling") {
+      html += stat("Still invested at horizon end", fmtMoney0(summary.capitalStillInLadder), "open rungs not yet matured — the ladder is still running");
+    }
+    if (summary.projectedValueAtHorizonEnd !== null) {
+      html += stat("Projected value at horizon end", fmtMoney0(summary.projectedValueAtHorizonEnd), "assumes coupons reinvested at the blended running yield — illustrative, not a real reinvestment execution");
+    }
+    grid.innerHTML = html;
+  }
+
+  function renderBuyInstructions(buyInstructions, params) {
+    document.getElementById("buyInstructionsNote").textContent =
+      "As of settlement date " + fmtDate(params.settlementDate) + ". Clean prices are the same daily LSE snapshot as the Gilt Cashflow & Tax Calculator; accrued interest uses the Actual/Actual convention.";
+    const rows = document.getElementById("buyRows");
+    rows.innerHTML = "";
+    buyInstructions.lines.forEach((l) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td>" + l.name + "</td>" +
+        "<td>" + l.isin + "</td>" +
+        "<td>" + l.couponPercent + "%</td>" +
+        "<td>" + fmtDate(l.redemptionDate) + "</td>" +
+        "<td class=\"amount\">" + fmtMoney0(l.nominal) + "</td>" +
+        "<td class=\"amount\">" + l.cleanPrice.toFixed(3) + "</td>" +
+        "<td class=\"amount\">" + fmtMoney(l.accruedInterest) + "</td>" +
+        "<td class=\"amount\">" + l.dirtyPrice.toFixed(3) + "</td>" +
+        "<td class=\"amount\">" + fmtMoney(l.cost) + "</td>" +
+        "<td class=\"amount\">" + fmtMoney(l.cumulativeCost) + "</td>";
+      rows.appendChild(tr);
+    });
+  }
+
+  function renderSchedule(events) {
+    const rows = document.getElementById("scheduleRows");
+    rows.innerHTML = "";
+    const TYPE_LABEL = { coupon: "Coupon", redemption: "Redemption", reinvestment: "Reinvested" };
+    const TYPE_PILL_CLASS = { coupon: "coupon", redemption: "redemption", reinvestment: "reinvestment" };
+    events.forEach((e) => {
+      const tr = document.createElement("tr");
+      if (e.type === "redemption") tr.className = "redemption";
+      if (e.type === "reinvestment") tr.className = "reinvestment";
+      tr.innerHTML =
+        "<td>" + fmtDate(e.date) + "</td>" +
+        "<td><span class=\"pill " + (TYPE_PILL_CLASS[e.type] || "") + "\">" + (TYPE_LABEL[e.type] || e.type) + "</span></td>" +
+        "<td>" + (e.ladderLabel || e.name) + "</td>" +
+        "<td class=\"amount\">" + fmtMoney(e.amount) + "</td>" +
+        "<td class=\"amount\">" + fmtMoney(e.cumulativeIncome) + "</td>" +
+        "<td class=\"amount\">" + fmtMoney(e.cumulativeCapitalReturned) + "</td>";
+      rows.appendChild(tr);
+    });
+  }
+
+  // ---- Maturity ladder diagram: one horizontal bar per initial rung ----
+  function renderLadderChart(rungs, params) {
+    const svg = document.getElementById("ladderChart");
+    const rowH = 34;
+    const W = 820, H = Math.max(160, rungs.length * rowH + 70);
+    const MARGIN = { top: 30, right: 30, bottom: 40, left: 190 };
+    const plotW = W - MARGIN.left - MARGIN.right;
+    svg.innerHTML = "";
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+
+    const sorted = rungs.slice().sort((a, b) => a.gilt.redemptionDate < b.gilt.redemptionDate ? -1 : 1);
+    const start = new Date(params.settlementDate);
+    const end = new Date(params.horizonEnd);
+    const totalDays = Math.max(1, (end - start) / 86400000);
+    const xScale = (iso) => MARGIN.left + ((new Date(iso) - start) / 86400000 / totalDays) * plotW;
+
+    const xTicks = 6;
+    for (let i = 0; i <= xTicks; i++) {
+      const x = MARGIN.left + (plotW * i) / xTicks;
+      const d = new Date(start.getTime() + (totalDays * i * 86400000) / xTicks);
+      svg.appendChild(el("line", { x1: x, x2: x, y1: MARGIN.top - 10, y2: H - MARGIN.bottom + 4, class: "gridline" }));
+      const label = el("text", { x: x, y: H - MARGIN.bottom + 20, class: "tick-label", "text-anchor": i === 0 ? "start" : i === xTicks ? "end" : "middle" });
+      label.textContent = d.getUTCFullYear();
+      svg.appendChild(label);
+    }
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top - 10, y2: H - MARGIN.bottom, class: "axis-line" }));
+
+    sorted.forEach((r, i) => {
+      const y = MARGIN.top + i * rowH;
+      const x0 = xScale(params.settlementDate);
+      const x1 = Math.min(MARGIN.left + plotW, xScale(r.gilt.redemptionDate));
+      const label = el("text", { x: MARGIN.left - 10, y: y + rowH / 2 + 4, class: "tick-label", "text-anchor": "end" });
+      label.textContent = r.gilt.name.length > 26 ? r.gilt.name.slice(0, 24) + "…" : r.gilt.name;
+      svg.appendChild(label);
+      svg.appendChild(el("rect", { x: x0, y: y + 6, width: Math.max(2, x1 - x0), height: rowH - 14, rx: 4, fill: "var(--series-1)", opacity: 0.85 }));
+      const nomLabel = el("text", { x: x1 + 6, y: y + rowH / 2 + 4, class: "tick-label" });
+      nomLabel.textContent = fmtMoney0(r.nominal);
+      svg.appendChild(nomLabel);
+    });
+  }
+
+  // ---- Income-over-time bar chart: coupons vs capital returned, grouped by year ----
+  function renderIncomeChart(events, params) {
+    const svg = document.getElementById("incomeChart");
+    const W = 820, H = 320;
+    const MARGIN = { top: 20, right: 20, bottom: 40, left: 80 };
+    const plotW = W - MARGIN.left - MARGIN.right;
+    const plotH = H - MARGIN.top - MARGIN.bottom;
+    svg.innerHTML = "";
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+
+    const startYear = new Date(params.settlementDate).getUTCFullYear();
+    const endYear = new Date(params.horizonEnd).getUTCFullYear();
+    const years = [];
+    for (let y = startYear; y <= endYear; y++) years.push(y);
+
+    const byYear = {};
+    years.forEach((y) => { byYear[y] = { coupon: 0, capital: 0 }; });
+    events.forEach((e) => {
+      const y = new Date(e.date + "T00:00:00Z").getUTCFullYear();
+      if (!byYear[y]) return;
+      if (e.type === "coupon") byYear[y].coupon += e.amount;
+      if (e.type === "redemption" && !e.reinvested) byYear[y].capital += e.amount;
+    });
+
+    const maxTotal = Math.max(1, ...years.map((y) => byYear[y].coupon + byYear[y].capital));
+    const yScale = (v) => plotH - (v / maxTotal) * plotH;
+
+    [0, 0.25, 0.5, 0.75, 1].forEach((f) => {
+      const val = maxTotal * f;
+      const y = MARGIN.top + yScale(val);
+      svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: y, y2: y, class: "gridline" }));
+      const label = el("text", { x: MARGIN.left - 10, y: y + 4, class: "tick-label", "text-anchor": "end" });
+      label.textContent = fmtMoney0(val);
+      svg.appendChild(label);
+    });
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "axis-line" }));
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: MARGIN.top + plotH, y2: MARGIN.top + plotH, class: "axis-line" }));
+
+    const bandW = plotW / years.length;
+    const barW = Math.min(38, bandW * 0.6);
+    years.forEach((y, i) => {
+      const cx = MARGIN.left + bandW * i + bandW / 2;
+      const coupon = byYear[y].coupon;
+      const capital = byYear[y].capital;
+      const couponTop = MARGIN.top + yScale(coupon);
+      const totalTop = MARGIN.top + yScale(coupon + capital);
+      if (coupon > 0) {
+        svg.appendChild(el("rect", { x: cx - barW / 2, y: couponTop, width: barW, height: MARGIN.top + plotH - couponTop, fill: "var(--series-2)" }));
+      }
+      if (capital > 0) {
+        svg.appendChild(el("rect", { x: cx - barW / 2, y: totalTop, width: barW, height: couponTop - totalTop, fill: "var(--series-1)" }));
+      }
+      if (years.length <= 20 || i % Math.ceil(years.length / 20) === 0) {
+        const label = el("text", { x: cx, y: MARGIN.top + plotH + 18, class: "tick-label", "text-anchor": "middle" });
+        label.textContent = y;
+        svg.appendChild(label);
+      }
+    });
+  }
+</script>
+</body>
+</html>
