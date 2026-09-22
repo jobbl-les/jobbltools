@@ -352,6 +352,17 @@
         <tbody id="scheduleRows"></tbody>
       </table>
     </div>
+
+    <h2>Total by calendar month</h2>
+    <p class="field-note">Every coupon and redemption in the schedule above, summed by calendar month across the whole horizon — the same split (income vs. capital) as the cash-flow schedule, collapsed to show which months carry the ladder's income.</p>
+    <div class="card table-scroll">
+      <table>
+        <thead>
+          <tr><th>Month</th><th class="amount">Coupon income</th><th class="amount">Capital returned</th><th class="amount">Total</th></tr>
+        </thead>
+        <tbody id="monthlyRows"></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="assumptions">
@@ -556,6 +567,7 @@
     renderLadderChart(ladder.rungs, params);
     renderIncomeChart(schedule.events, params);
     renderSchedule(schedule.events);
+    renderMonthlyTable(schedule.events);
 
     results.hidden = false;
   }
@@ -628,6 +640,41 @@
         "<td class=\"amount\">" + fmtMoney(e.cumulativeCapitalReturned) + "</td>";
       rows.appendChild(tr);
     });
+  }
+
+  const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  function renderMonthlyTable(events) {
+    const totals = MONTH_NAMES.map(() => ({ coupon: 0, capital: 0 }));
+    events.forEach((e) => {
+      const m = new Date(e.date + "T00:00:00Z").getUTCMonth();
+      if (e.type === "coupon") totals[m].coupon += e.amount;
+      if (e.type === "redemption" && !e.reinvested) totals[m].capital += e.amount;
+    });
+
+    const rows = document.getElementById("monthlyRows");
+    rows.innerHTML = "";
+    let totalCoupon = 0, totalCapital = 0;
+    totals.forEach((t, i) => {
+      totalCoupon += t.coupon;
+      totalCapital += t.capital;
+      const tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td>" + MONTH_NAMES[i] + "</td>" +
+        "<td class=\"amount\">" + (t.coupon > 0 ? fmtMoney0(t.coupon) : "—") + "</td>" +
+        "<td class=\"amount\">" + (t.capital > 0 ? fmtMoney0(t.capital) : "—") + "</td>" +
+        "<td class=\"amount\">" + fmtMoney0(t.coupon + t.capital) + "</td>";
+      rows.appendChild(tr);
+    });
+
+    const totalRow = document.createElement("tr");
+    totalRow.style.fontWeight = "600";
+    totalRow.innerHTML =
+      "<td>Total</td>" +
+      "<td class=\"amount\">" + fmtMoney0(totalCoupon) + "</td>" +
+      "<td class=\"amount\">" + fmtMoney0(totalCapital) + "</td>" +
+      "<td class=\"amount\">" + fmtMoney0(totalCoupon + totalCapital) + "</td>";
+    rows.appendChild(totalRow);
   }
 
   // ---- Maturity ladder diagram: one horizontal bar per initial rung ----
