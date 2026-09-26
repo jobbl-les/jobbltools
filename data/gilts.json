@@ -1,5 +1,5 @@
 {
-  "asOf": "2026-09-25T05:25:53.081Z",
+  "asOf": "2026-09-26T05:18:50.258Z",
   "source": {
     "list": "London Stock Exchange Price Explorer (BONDS/Gilts) — https://www.londonstockexchange.com/live-markets/market-data-dashboard/price-explorer?categories=BONDS&subcategories=14",
     "priceNote": "LSE prices are delayed at least 15 minutes, per LSE's own disclosure.",
@@ -14,10 +14,10 @@
       "indexLinked": false,
       "redemptionDate": "2026-10-22",
       "price": {
-        "last": 99.76,
-        "mid": 99.735,
-        "netChange": 0.02,
-        "percentChange": 0.02005213555243633
+        "last": 99.79,
+        "mid": 99.765,
+        "netChange": 0.03,
+        "percentChange": 0.03007217321571772
       },
       "couponSchedule": [
         {
@@ -35,10 +35,10 @@
       "indexLinked": false,
       "redemptionDate": "2027-01-29",
       "price": {
-        "last": 99.98,
-        "mid": 100.06,
-        "netChange": 0,
-        "percentChange": 0
+        "last": 100,
+        "mid": 100.075,
+        "netChange": 0.02,
+        "percentChange": 0.02000400080016003
       },
       "couponSchedule": [
         {
@@ -56,10 +56,10 @@
       "indexLinked": false,
       "redemptionDate": "2027-03-07",
       "price": {
-        "last": 99.79,
-        "mid": 99.845,
-        "netChange": 0,
-        "percentChange": 0
+        "last": 99.82,
+        "mid": 99.875,
+        "netChange": 0.03,
+        "percentChange": 0.03006313257841467
       },
       "couponSchedule": [
         {
@@ -77,10 +77,10 @@
       "indexLinked": false,
       "redemptionDate": "2027-07-22",
       "price": {
-        "last": 97.46,
-        "mid": 97.49,
-        "netChange": 0.03,
-        "percentChange": 0.03079133737041979
+        "last": 97.51,
+        "mid": 97.585,
+        "netChange": 0.05,
+        "percentChange": 0.05130309870716191
       },
       "couponSchedule": [
         {
@@ -103,10 +103,10 @@
       "indexLinked": true,
       "redemptionDate": "2027-11-22",
       "price": {
-        "last": 101.73,
-        "mid": 101.805,
-        "netChange": 0.14,
-        "percentChange": 0.137808839452702
+        "last": 101.75,
+        "mid": 101.78,
+        "netChange": 0.02,
+        "percentChange": 0.01965988400668436
       },
       "couponSchedule": [
         {
@@ -134,10 +134,10 @@
       "indexLinked": false,
       "redemptionDate": "2027-12-07",
       "price": {
-        "last": 99.57,
-        "mid": 99.61,
-        "netChange": 0.02,
-        "percentChange": 0.02009040683073832
+        "last": 99.62,
+        "mid": 99.715,
+        "netChange": 0.05,
+        "percentChange": 0.05021592849251783
       },
       "couponSchedule": [
         {
@@ -165,10 +165,10 @@
       "indexLinked": false,
       "redemptionDate": "2028-01-31",
       "price": {
-        "last": 94.49,
-        "mid": 94.505,
-        "netChange": 0,
-        "percentChange": 0
+        "last": 94.63,
+        "mid": 94.655,
+        "netChange": 0.14,
+        "percentChange": 0.1481638268599852
       },
       "couponSchedule": [
         {
@@ -196,10 +196,10 @@
       "indexLinked": false,
       "redemptionDate": "2028-03-07",
       "price": {
-        "last": 99.45,
-        "mid": 99.51,
-        "netChange": -0.01,
-        "percentChange": -0.01005429318318922
+        "last": 99.53,
+        "mid": 99.62,
+        "netChange": 0.08,
+        "percentChange": 0.08044243338360985
       },
       "couponSchedule": [
         {
@@ -227,10 +227,10 @@
       "indexLinked": false,
       "redemptionDate": "2028-06-07",
       "price": {
-        "last": 99.5,
-        "mid": 99.53,
-        "netChange": -0.01,
-        "percentChange": -0.01004924128228319
+        "last": 99.59,
+        "mid": 99.655,
+        "netChange": 0.09,
+        "percentChange": 0.09045226130653267
       },
       "couponSchedule": [
         {
@@ -263,10 +263,10 @@
       "indexLinked": true,
       "redemptionDate": "2028-08-10",
       "price": {
-        "last": 99.71,
-        "mid": 99.76,
-        "netChange": 0.16,
-        "percentChange": 0.1607232546459066
+        "last": 99.73,
+        "mid": 99.81,
+        "netChange": 0.02,
+        "percentChange": 0.02005816868919868
       },
       "couponSchedule": [
         {
@@ -299,10 +299,10 @@
       "indexLinked": false,
       "redemptionDate": "2028-10-22",
       "price": {
-        "last": 93.88,
-        "mid": 93.91,
-        "netChange": -0.02,
-        "percentChange": -0.02129925452609159
+        "last": 94,
+        "mid": 94.075,
+        "netChange": 0.12,
+        "percentChange": 0.1278227524499361
       },
       "couponSchedule": [
         {
@@ -340,10 +340,10 @@
       "indexLinked": false,
       "redemptionDate": "2028-12-07",
       "price": {
-        "last": 102.65,
-        "mid": 102.715,
-        "netChange": 0,
-        "percentChange": 0
+        "last": 102.74,
+        "mid": 102.875,
+        "netChange": 0.09,
+        "percentChange": 0.08767657087189479
       },
       "couponSchedule": [
         {
@@ -381,10 +381,10 @@
       "indexLinked": false,
       "redemptionDate": "2029-01-31",
       "price": {
-        "last": 90.56,
-        "mid": 90.57,
-        "netChange": -0.02,
-        "percentChange": -0.0220799293442261
+        "last": 90.695,
+        "mid": 90.81,
+        "netChange": 0.135,
+        "percentChange": 0.1490724381625442
       },
       "couponSchedule": [
         {
@@ -422,10 +422,10 @@
       "indexLinked": true,
       "redemptionDate": "2029-03-22",
       "price": {
-        "last": 98.21,
-        "mid": 98.34,
-        "netChange": 0.11,
-        "percentChange": 0.1121304791029562
+        "last": 98.255,
+        "mid": 98.405,
+        "netChange": 0.045,
+        "percentChange": 0.04582018124427248
       },
       "couponSchedule": [
         {
@@ -463,10 +463,10 @@
       "indexLinked": false,
       "redemptionDate": "2029-05-22",
       "price": {
-        "last": 97.74,
-        "mid": 97.755,
-        "netChange": -0.06,
-        "percentChange": -0.06134969325153374
+        "last": 97.87,
+        "mid": 97.915,
+        "netChange": 0.13,
+        "percentChange": 0.1330059341109065
       },
       "couponSchedule": [
         {
@@ -509,10 +509,10 @@
       "indexLinked": false,
       "redemptionDate": "2029-07-22",
       "price": {
-        "last": 97.94,
-        "mid": 97.975,
-        "netChange": -0.07,
-        "percentChange": -0.07142128354249566
+        "last": 98.08,
+        "mid": 98.15,
+        "netChange": 0.14,
+        "percentChange": 0.1429446599959159
       },
       "couponSchedule": [
         {
@@ -555,10 +555,10 @@
       "indexLinked": false,
       "redemptionDate": "2029-10-22",
       "price": {
-        "last": 88.73,
-        "mid": 88.75,
-        "netChange": -0.06,
-        "percentChange": -0.06757517738484065
+        "last": 88.89,
+        "mid": 88.955,
+        "netChange": 0.16,
+        "percentChange": 0.1803223261580074
       },
       "couponSchedule": [
         {
@@ -606,10 +606,10 @@
       "indexLinked": false,
       "redemptionDate": "2030-03-07",
       "price": {
-        "last": 98.19,
-        "mid": 98.205,
-        "netChange": -0.1,
-        "percentChange": -0.1017397497202157
+        "last": 98.35,
+        "mid": 98.395,
+        "netChange": 0.16,
+        "percentChange": 0.1629493838476423
       },
       "couponSchedule": [
         {
@@ -657,10 +657,10 @@
       "indexLinked": false,
       "redemptionDate": "2030-05-22",
       "price": {
-        "last": 98.86,
-        "mid": 98.88,
-        "netChange": -0.1,
-        "percentChange": -0.101050929668553
+        "last": 99.01,
+        "mid": 99.09,
+        "netChange": 0.15,
+        "percentChange": 0.1517297187942545
       },
       "couponSchedule": [
         {
@@ -713,10 +713,10 @@
       "indexLinked": true,
       "redemptionDate": "2030-07-22",
       "price": {
-        "last": 341.16,
-        "mid": 341.32,
-        "netChange": 0.73,
-        "percentChange": 0.2144346855447522
+        "last": 341.31,
+        "mid": 341.565,
+        "netChange": 0.15,
+        "percentChange": 0.04396763981709462
       },
       "couponSchedule": [
         {
@@ -769,10 +769,10 @@
       "indexLinked": false,
       "redemptionDate": "2030-10-22",
       "price": {
-        "last": 83.55,
-        "mid": 83.57,
-        "netChange": -0.08,
-        "percentChange": -0.0956594523496353
+        "last": 83.74,
+        "mid": 83.815,
+        "netChange": 0.19,
+        "percentChange": 0.227408737283064
       },
       "couponSchedule": [
         {
@@ -830,10 +830,10 @@
       "indexLinked": false,
       "redemptionDate": "2030-12-07",
       "price": {
-        "last": 99.47,
-        "mid": 99.485,
-        "netChange": -0.1,
-        "percentChange": -0.1004318569850357
+        "last": 99.63,
+        "mid": 99.72,
+        "netChange": 0.16,
+        "percentChange": 0.1608525183472404
       },
       "couponSchedule": [
         {
@@ -891,10 +891,10 @@
       "indexLinked": false,
       "redemptionDate": "2031-03-07",
       "price": {
-        "last": 96.62,
-        "mid": 96.605,
-        "netChange": -0.14,
-        "percentChange": -0.1446878875568417
+        "last": 96.77,
+        "mid": 96.82,
+        "netChange": 0.15,
+        "percentChange": 0.1552473607948665
       },
       "couponSchedule": [
         {
@@ -952,10 +952,10 @@
       "indexLinked": false,
       "redemptionDate": "2031-07-31",
       "price": {
-        "last": 80.16,
-        "mid": 80.175,
-        "netChange": -0.11,
-        "percentChange": -0.1370374984427557
+        "last": 80.34,
+        "mid": 80.405,
+        "netChange": 0.18,
+        "percentChange": 0.2245508982035928
       },
       "couponSchedule": [
         {
@@ -1018,10 +1018,10 @@
       "indexLinked": true,
       "redemptionDate": "2031-08-10",
       "price": {
-        "last": 95.54,
-        "mid": 95.58,
-        "netChange": 0.17,
-        "percentChange": 0.17825311942959
+        "last": 95.51,
+        "mid": 95.6,
+        "netChange": -0.03,
+        "percentChange": -0.03140046054008792
       },
       "couponSchedule": [
         {
@@ -1084,10 +1084,10 @@
       "indexLinked": false,
       "redemptionDate": "2031-10-22",
       "price": {
-        "last": 95.53,
-        "mid": 95.595,
-        "netChange": -0.16,
-        "percentChange": -0.1672066046608841
+        "last": 95.7,
+        "mid": 95.825,
+        "netChange": 0.17,
+        "percentChange": 0.1779545692452633
       },
       "couponSchedule": [
         {
@@ -1155,10 +1155,10 @@
       "indexLinked": false,
       "redemptionDate": "2032-01-31",
       "price": {
-        "last": 81.27,
-        "mid": 81.325,
-        "netChange": -0.14,
-        "percentChange": -0.1719690455717971
+        "last": 81.42,
+        "mid": 81.485,
+        "netChange": 0.15,
+        "percentChange": 0.1845699520118125
       },
       "couponSchedule": [
         {
@@ -1226,10 +1226,10 @@
       "indexLinked": false,
       "redemptionDate": "2032-03-07",
       "price": {
-        "last": 98,
-        "mid": 98.02,
-        "netChange": -0.19,
-        "percentChange": -0.1935023933190753
+        "last": 98.18,
+        "mid": 98.24,
+        "netChange": 0.18,
+        "percentChange": 0.1836734693877551
       },
       "couponSchedule": [
         {
@@ -1297,10 +1297,10 @@
       "indexLinked": false,
       "redemptionDate": "2032-06-07",
       "price": {
-        "last": 96.3,
-        "mid": 96.37,
-        "netChange": -0.18,
-        "percentChange": -0.1865671641791045
+        "last": 96.44,
+        "mid": 96.525,
+        "netChange": 0.14,
+        "percentChange": 0.1453790238836968
       },
       "couponSchedule": [
         {
@@ -1373,10 +1373,10 @@
       "indexLinked": true,
       "redemptionDate": "2032-11-22",
       "price": {
-        "last": 99.35,
-        "mid": 99.455,
-        "netChange": 0.02,
-        "percentChange": 0.02013490385583409
+        "last": 99.34,
+        "mid": 99.44,
+        "netChange": -0.01,
+        "percentChange": -0.01006542526421741
       },
       "couponSchedule": [
         {
@@ -1454,10 +1454,10 @@
       "indexLinked": false,
       "redemptionDate": "2033-01-31",
       "price": {
-        "last": 90.07,
-        "mid": 90.09,
-        "netChange": -0.2,
-        "percentChange": -0.2215575495735017
+        "last": 90.19,
+        "mid": 90.22,
+        "netChange": 0.12,
+        "percentChange": 0.1332297102253803
       },
       "couponSchedule": [
         {
@@ -1535,10 +1535,10 @@
       "indexLinked": false,
       "redemptionDate": "2033-03-07",
       "price": {
-        "last": 94.61,
-        "mid": 94.62,
-        "netChange": -0.22,
-        "percentChange": -0.2319940946957714
+        "last": 94.74,
+        "mid": 94.75,
+        "netChange": 0.13,
+        "percentChange": 0.1374061938484304
       },
       "couponSchedule": [
         {
@@ -1616,10 +1616,10 @@
       "indexLinked": false,
       "redemptionDate": "2033-07-31",
       "price": {
-        "last": 75.59,
-        "mid": 75.59,
-        "netChange": -0.18,
-        "percentChange": -0.2375610399894417
+        "last": 75.7,
+        "mid": 75.73,
+        "netChange": 0.11,
+        "percentChange": 0.1455218944304802
       },
       "couponSchedule": [
         {
@@ -1702,10 +1702,10 @@
       "indexLinked": false,
       "redemptionDate": "2033-11-22",
       "price": {
-        "last": 94.7,
-        "mid": 94.715,
-        "netChange": 0.085,
-        "percentChange": 0.08983776356814459
+        "last": 94.595,
+        "mid": 94.68,
+        "netChange": -0.105,
+        "percentChange": -0.1108764519535375
       },
       "couponSchedule": [
         {
@@ -1793,10 +1793,10 @@
       "indexLinked": false,
       "redemptionDate": "2034-01-31",
       "price": {
-        "last": 96.63,
-        "mid": 96.67,
-        "netChange": -0.26,
-        "percentChange": -0.2683455464960264
+        "last": 96.72,
+        "mid": 96.755,
+        "netChange": 0.09,
+        "percentChange": 0.09313877677739832
       },
       "couponSchedule": [
         {
@@ -1884,10 +1884,10 @@
       "indexLinked": true,
       "redemptionDate": "2034-03-22",
       "price": {
-        "last": 93.54,
-        "mid": 93.645,
-        "netChange": 0.03,
-        "percentChange": 0.03208213025344883
+        "last": 93.46,
+        "mid": 93.6,
+        "netChange": -0.08,
+        "percentChange": -0.08552490912978405
       },
       "couponSchedule": [
         {
@@ -1975,10 +1975,10 @@
       "indexLinked": false,
       "redemptionDate": "2034-07-31",
       "price": {
-        "last": 93.85,
-        "mid": 93.89,
-        "netChange": -0.27,
-        "percentChange": -0.2868678283042924
+        "last": 93.93,
+        "mid": 93.98,
+        "netChange": 0.08,
+        "percentChange": 0.08524240809802877
       },
       "couponSchedule": [
         {
@@ -2071,10 +2071,10 @@
       "indexLinked": false,
       "redemptionDate": "2034-09-07",
       "price": {
-        "last": 95.51,
-        "mid": 95.615,
-        "netChange": -0.3,
-        "percentChange": -0.3131197161047907
+        "last": 95.59,
+        "mid": 95.705,
+        "netChange": 0.08,
+        "percentChange": 0.0837608627368862
       },
       "couponSchedule": [
         {
@@ -2167,10 +2167,10 @@
       "indexLinked": true,
       "redemptionDate": "2035-01-26",
       "price": {
-        "last": 241.3,
-        "mid": 241.195,
-        "netChange": 0.32,
-        "percentChange": 0.1327911029960993
+        "last": 240.73,
+        "mid": 241.055,
+        "netChange": -0.57,
+        "percentChange": -0.2362204724409449
       },
       "couponSchedule": [
         {
@@ -2268,10 +2268,10 @@
       "indexLinked": false,
       "redemptionDate": "2035-03-07",
       "price": {
-        "last": 94.76,
-        "mid": 94.76,
-        "netChange": -0.31,
-        "percentChange": -0.3260755232986221
+        "last": 94.82,
+        "mid": 94.83,
+        "netChange": 0.06,
+        "percentChange": 0.06331785563528915
       },
       "couponSchedule": [
         {
@@ -2369,10 +2369,10 @@
       "indexLinked": false,
       "redemptionDate": "2035-07-31",
       "price": {
-        "last": 67.34,
-        "mid": 67.35,
-        "netChange": -0.26,
-        "percentChange": -0.3846153846153846
+        "last": 67.4,
+        "mid": 67.43,
+        "netChange": 0.06,
+        "percentChange": 0.0891000891000891
       },
       "couponSchedule": [
         {
@@ -2475,10 +2475,10 @@
       "indexLinked": true,
       "redemptionDate": "2035-09-22",
       "price": {
-        "last": 94.265,
-        "mid": 94.26,
-        "netChange": 0.08,
-        "percentChange": 0.08493921537399798
+        "last": 94.03,
+        "mid": 94.12,
+        "netChange": -0.235,
+        "percentChange": -0.2492971940805177
       },
       "couponSchedule": [
         {
@@ -2581,10 +2581,10 @@
       "indexLinked": false,
       "redemptionDate": "2035-10-22",
       "price": {
-        "last": 95.92,
-        "mid": 95.915,
-        "netChange": -0.34,
-        "percentChange": -0.3532100560980677
+        "last": 95.95,
+        "mid": 95.975,
+        "netChange": 0.03,
+        "percentChange": 0.03127606338615513
       },
       "couponSchedule": [
         {
@@ -2692,10 +2692,10 @@
       "indexLinked": false,
       "redemptionDate": "2036-03-07",
       "price": {
-        "last": 92.02,
-        "mid": 92.105,
-        "netChange": -0.37,
-        "percentChange": -0.4004762420175344
+        "last": 92.04,
+        "mid": 92.145,
+        "netChange": 0.02,
+        "percentChange": 0.02173440556400782
       },
       "couponSchedule": [
         {
@@ -2804,9 +2804,9 @@
       "redemptionDate": "2036-07-31",
       "price": {
         "last": 96.15,
-        "mid": 96.16,
-        "netChange": -0.37,
-        "percentChange": -0.3833402403646913
+        "mid": 96.21,
+        "netChange": 0,
+        "percentChange": 0
       },
       "couponSchedule": [
         {
@@ -2919,10 +2919,10 @@
       "indexLinked": true,
       "redemptionDate": "2036-11-22",
       "price": {
-        "last": 83.255,
-        "mid": 83.285,
-        "netChange": 0.13,
-        "percentChange": 0.156390977443609
+        "last": 83.02,
+        "mid": 83.155,
+        "netChange": -0.235,
+        "percentChange": -0.2822653294096451
       },
       "couponSchedule": [
         {
@@ -3040,10 +3040,10 @@
       "indexLinked": false,
       "redemptionDate": "2037-03-07",
       "price": {
-        "last": 93.64,
-        "mid": 93.655,
-        "netChange": -0.37,
-        "percentChange": -0.3935751515796192
+        "last": 93.63,
+        "mid": 93.695,
+        "netChange": -0.01,
+        "percentChange": -0.01067919692439129
       },
       "couponSchedule": [
         {
@@ -3161,10 +3161,10 @@
       "indexLinked": false,
       "redemptionDate": "2037-09-07",
       "price": {
-        "last": 69.69,
-        "mid": 69.715,
-        "netChange": -0.33,
-        "percentChange": -0.4712939160239931
+        "last": 69.66,
+        "mid": 69.755,
+        "netChange": -0.03,
+        "percentChange": -0.04304778303917348
       },
       "couponSchedule": [
         {
@@ -3287,10 +3287,10 @@
       "indexLinked": true,
       "redemptionDate": "2037-11-22",
       "price": {
-        "last": 90.86,
-        "mid": 90.935,
-        "netChange": 0.03,
-        "percentChange": 0.03302873499944952
+        "last": 90.58,
+        "mid": 90.795,
+        "netChange": -0.28,
+        "percentChange": -0.3081664098613251
       },
       "couponSchedule": [
         {
@@ -3418,10 +3418,10 @@
       "indexLinked": false,
       "redemptionDate": "2038-01-29",
       "price": {
-        "last": 85.35,
-        "mid": 85.375,
-        "netChange": -0.39,
-        "percentChange": -0.4548635409377187
+        "last": 85.32,
+        "mid": 85.415,
+        "netChange": -0.03,
+        "percentChange": -0.0351493848857645
       },
       "couponSchedule": [
         {
@@ -3549,10 +3549,10 @@
       "indexLinked": true,
       "redemptionDate": "2038-09-22",
       "price": {
-        "last": 96.21,
-        "mid": 96.18,
-        "netChange": 0.065,
-        "percentChange": 0.06760621977221903
+        "last": 95.9,
+        "mid": 96.02,
+        "netChange": -0.31,
+        "percentChange": -0.3222118282922773
       },
       "couponSchedule": [
         {
@@ -3685,10 +3685,10 @@
       "indexLinked": false,
       "redemptionDate": "2038-12-07",
       "price": {
-        "last": 93.12,
-        "mid": 93.2,
-        "netChange": -0.42,
-        "percentChange": -0.4490057729313663
+        "last": 93.05,
+        "mid": 93.24,
+        "netChange": -0.07,
+        "percentChange": -0.07517182130584192
       },
       "couponSchedule": [
         {
@@ -3826,10 +3826,10 @@
       "indexLinked": false,
       "redemptionDate": "2039-01-31",
       "price": {
-        "last": 60.86,
-        "mid": 60.885,
-        "netChange": -0.34,
-        "percentChange": -0.5555555555555556
+        "last": 60.8,
+        "mid": 60.925,
+        "netChange": -0.06,
+        "percentChange": -0.09858692080184028
       },
       "couponSchedule": [
         {
@@ -3967,10 +3967,10 @@
       "indexLinked": false,
       "redemptionDate": "2039-03-22",
       "price": {
-        "last": 77.36,
-        "mid": 77.39,
-        "netChange": 0.09,
-        "percentChange": 0.1164746991070273
+        "last": 76.99,
+        "mid": 77.245,
+        "netChange": -0.37,
+        "percentChange": -0.4782833505687694
       },
       "couponSchedule": [
         {
@@ -4108,10 +4108,10 @@
       "indexLinked": false,
       "redemptionDate": "2039-09-07",
       "price": {
-        "last": 87.81,
-        "mid": 87.855,
-        "netChange": -0.42,
-        "percentChange": -0.4760285617137028
+        "last": 87.72,
+        "mid": 87.89,
+        "netChange": -0.09,
+        "percentChange": -0.1024940211820977
       },
       "couponSchedule": [
         {
@@ -4254,10 +4254,10 @@
       "indexLinked": false,
       "redemptionDate": "2040-01-31",
       "price": {
-        "last": 88.35,
-        "mid": 88.345,
-        "netChange": -0.43,
-        "percentChange": -0.4843433205676954
+        "last": 88.25,
+        "mid": 88.38,
+        "netChange": -0.1,
+        "percentChange": -0.1131861912846633
       },
       "couponSchedule": [
         {
@@ -4405,10 +4405,10 @@
       "indexLinked": true,
       "redemptionDate": "2040-03-22",
       "price": {
-        "last": 81.2,
-        "mid": 81.195,
-        "netChange": 0.11,
-        "percentChange": 0.1356517449747194
+        "last": 80.77,
+        "mid": 81.045,
+        "netChange": -0.43,
+        "percentChange": -0.5295566502463054
       },
       "couponSchedule": [
         {
@@ -4556,10 +4556,10 @@
       "indexLinked": false,
       "redemptionDate": "2040-12-07",
       "price": {
-        "last": 86.56,
-        "mid": 86.615,
-        "netChange": -0.44,
-        "percentChange": -0.5057471264367815
+        "last": 86.49,
+        "mid": 86.655,
+        "netChange": -0.07,
+        "percentChange": -0.08086876155268022
       },
       "couponSchedule": [
         {
@@ -4717,10 +4717,10 @@
       "indexLinked": false,
       "redemptionDate": "2041-01-31",
       "price": {
-        "last": 95.93,
-        "mid": 95.895,
-        "netChange": -0.48,
-        "percentChange": -0.4978736645576185
+        "last": 95.82,
+        "mid": 95.935,
+        "netChange": -0.11,
+        "percentChange": -0.1146669446471385
       },
       "couponSchedule": [
         {
@@ -4878,10 +4878,10 @@
       "indexLinked": true,
       "redemptionDate": "2041-08-10",
       "price": {
-        "last": 72.985,
-        "mid": 72.9,
-        "netChange": 0.065,
-        "percentChange": 0.08913878222709819
+        "last": 72.56,
+        "mid": 72.745,
+        "netChange": -0.425,
+        "percentChange": -0.5823114338562718
       },
       "couponSchedule": [
         {
@@ -5044,10 +5044,10 @@
       "indexLinked": false,
       "redemptionDate": "2041-10-22",
       "price": {
-        "last": 55.53,
-        "mid": 55.605,
-        "netChange": -0.36,
-        "percentChange": -0.644122383252818
+        "last": 55.48,
+        "mid": 55.655,
+        "netChange": -0.05,
+        "percentChange": -0.09004141905276428
       },
       "couponSchedule": [
         {
@@ -5215,10 +5215,10 @@
       "indexLinked": true,
       "redemptionDate": "2042-11-22",
       "price": {
-        "last": 77.04,
-        "mid": 77.01,
-        "netChange": 0.01,
-        "percentChange": 0.01298195508243541
+        "last": 76.64,
+        "mid": 76.82,
+        "netChange": -0.4,
+        "percentChange": -0.5192107995846315
       },
       "couponSchedule": [
         {
@@ -5396,10 +5396,10 @@
       "indexLinked": false,
       "redemptionDate": "2042-12-07",
       "price": {
-        "last": 87.1,
-        "mid": 87.175,
-        "netChange": -0.53,
-        "percentChange": -0.604815702385028
+        "last": 86.99,
+        "mid": 87.16,
+        "netChange": -0.11,
+        "percentChange": -0.1262916188289323
       },
       "couponSchedule": [
         {
@@ -5577,10 +5577,10 @@
       "indexLinked": false,
       "redemptionDate": "2043-10-22",
       "price": {
-        "last": 88.81,
-        "mid": 88.845,
-        "netChange": -0.53,
-        "percentChange": -0.5932393104992165
+        "last": 88.66,
+        "mid": 88.825,
+        "netChange": -0.15,
+        "percentChange": -0.1688998986600608
       },
       "couponSchedule": [
         {
@@ -5768,10 +5768,10 @@
       "indexLinked": false,
       "redemptionDate": "2044-01-22",
       "price": {
-        "last": 72.29,
-        "mid": 72.325,
-        "netChange": -0.47,
-        "percentChange": -0.645959318306762
+        "last": 72.18,
+        "mid": 72.31,
+        "netChange": -0.11,
+        "percentChange": -0.1521648914096002
       },
       "couponSchedule": [
         {
@@ -5959,10 +5959,10 @@
       "indexLinked": true,
       "redemptionDate": "2044-03-22",
       "price": {
-        "last": 67.34,
-        "mid": 67.275,
-        "netChange": 0.12,
-        "percentChange": 0.1785182981255579
+        "last": 66.82,
+        "mid": 67.095,
+        "netChange": -0.52,
+        "percentChange": -0.7722007722007722
       },
       "couponSchedule": [
         {
@@ -6150,10 +6150,10 @@
       "indexLinked": false,
       "redemptionDate": "2045-01-22",
       "price": {
-        "last": 74.02,
-        "mid": 74.07,
-        "netChange": -0.49,
-        "percentChange": -0.6576298483425044
+        "last": 73.9,
+        "mid": 74.06,
+        "netChange": -0.12,
+        "percentChange": -0.1621183463928668
       },
       "couponSchedule": [
         {
@@ -6351,10 +6351,10 @@
       "indexLinked": true,
       "redemptionDate": "2045-03-22",
       "price": {
-        "last": 73.01,
-        "mid": 73,
-        "netChange": -0.055,
-        "percentChange": -0.07527543967699993
+        "last": 72.625,
+        "mid": 72.79,
+        "netChange": -0.385,
+        "percentChange": -0.5273250239693194
       },
       "couponSchedule": [
         {
@@ -6552,10 +6552,10 @@
       "indexLinked": false,
       "redemptionDate": "2046-01-31",
       "price": {
-        "last": 42.72,
+        "last": 42.64,
         "mid": 42.76,
-        "netChange": -0.38,
-        "percentChange": -0.8816705336426914
+        "netChange": -0.08,
+        "percentChange": -0.1872659176029963
       },
       "couponSchedule": [
         {
@@ -6763,10 +6763,10 @@
       "indexLinked": true,
       "redemptionDate": "2046-03-22",
       "price": {
-        "last": 63.84,
-        "mid": 63.85,
-        "netChange": -0.005,
-        "percentChange": -0.00783146683373796
+        "last": 63.38,
+        "mid": 63.645,
+        "netChange": -0.46,
+        "percentChange": -0.7205513784461153
       },
       "couponSchedule": [
         {
@@ -6974,10 +6974,10 @@
       "indexLinked": false,
       "redemptionDate": "2046-12-07",
       "price": {
-        "last": 81.33,
-        "mid": 81.415,
-        "netChange": -0.57,
-        "percentChange": -0.695970695970696
+        "last": 81.23,
+        "mid": 81.4,
+        "netChange": -0.1,
+        "percentChange": -0.122955858846674
       },
       "couponSchedule": [
         {
@@ -7195,10 +7195,10 @@
       "indexLinked": false,
       "redemptionDate": "2047-07-22",
       "price": {
-        "last": 47.79,
-        "mid": 47.87,
-        "netChange": -0.4,
-        "percentChange": -0.8300477277443453
+        "last": 47.685,
+        "mid": 47.85,
+        "netChange": -0.105,
+        "percentChange": -0.2197112366603892
       },
       "couponSchedule": [
         {
@@ -7421,10 +7421,10 @@
       "indexLinked": true,
       "redemptionDate": "2047-11-22",
       "price": {
-        "last": 71.97,
-        "mid": 71.955,
-        "netChange": -0.065,
-        "percentChange": -0.09023391406954952
+        "last": 71.48,
+        "mid": 71.69,
+        "netChange": -0.49,
+        "percentChange": -0.6808392385716271
       },
       "couponSchedule": [
         {
@@ -7652,10 +7652,10 @@
       "indexLinked": true,
       "redemptionDate": "2048-08-10",
       "price": {
-        "last": 60.395,
-        "mid": 60.41,
-        "netChange": -0.085,
-        "percentChange": -0.140542328042328
+        "last": 59.94,
+        "mid": 60.165,
+        "netChange": -0.455,
+        "percentChange": -0.7533736236443414
       },
       "couponSchedule": [
         {
@@ -7888,10 +7888,10 @@
       "indexLinked": false,
       "redemptionDate": "2049-01-22",
       "price": {
-        "last": 49.075,
-        "mid": 49.125,
-        "netChange": -0.425,
-        "percentChange": -0.8585858585858586
+        "last": 48.97,
+        "mid": 49.105,
+        "netChange": -0.105,
+        "percentChange": -0.2139582272032603
       },
       "couponSchedule": [
         {
@@ -8129,10 +8129,10 @@
       "indexLinked": true,
       "redemptionDate": "2049-09-22",
       "price": {
-        "last": 89.84,
-        "mid": 89.825,
-        "netChange": -0.235,
-        "percentChange": -0.2608936996946989
+        "last": 89.255,
+        "mid": 89.465,
+        "netChange": -0.585,
+        "percentChange": -0.6511576135351737
       },
       "couponSchedule": [
         {
@@ -8375,10 +8375,10 @@
       "indexLinked": false,
       "redemptionDate": "2049-12-07",
       "price": {
-        "last": 79.8,
+        "last": 79.7,
         "mid": 79.855,
-        "netChange": -0.59,
-        "percentChange": -0.7339221296181117
+        "netChange": -0.1,
+        "percentChange": -0.1253132832080201
       },
       "couponSchedule": [
         {
@@ -8626,10 +8626,10 @@
       "indexLinked": true,
       "redemptionDate": "2050-03-22",
       "price": {
-        "last": 64.81,
-        "mid": 64.74,
-        "netChange": -0.025,
-        "percentChange": -0.0385594200663222
+        "last": 64.24,
+        "mid": 64.41,
+        "netChange": -0.57,
+        "percentChange": -0.8794939052615337
       },
       "couponSchedule": [
         {
@@ -8877,10 +8877,10 @@
       "indexLinked": false,
       "redemptionDate": "2050-10-22",
       "price": {
-        "last": 32.8,
-        "mid": 32.865,
-        "netChange": -0.39,
-        "percentChange": -1.175052726724917
+        "last": 32.74,
+        "mid": 32.85,
+        "netChange": -0.06,
+        "percentChange": -0.1829268292682927
       },
       "couponSchedule": [
         {
@@ -9138,10 +9138,10 @@
       "indexLinked": true,
       "redemptionDate": "2051-03-22",
       "price": {
-        "last": 56.86,
-        "mid": 56.78,
-        "netChange": -0.025,
-        "percentChange": -0.04394831677946735
+        "last": 56.305,
+        "mid": 56.5,
+        "netChange": -0.555,
+        "percentChange": -0.9760816039395005
       },
       "couponSchedule": [
         {
@@ -9399,10 +9399,10 @@
       "indexLinked": false,
       "redemptionDate": "2051-07-31",
       "price": {
-        "last": 39.59,
-        "mid": 39.64,
-        "netChange": -0.38,
-        "percentChange": -0.9507130347760822
+        "last": 39.51,
+        "mid": 39.635,
+        "netChange": -0.08,
+        "percentChange": -0.2020712301086133
       },
       "couponSchedule": [
         {
@@ -9665,10 +9665,10 @@
       "indexLinked": true,
       "redemptionDate": "2052-03-22",
       "price": {
-        "last": 57.95,
-        "mid": 57.825,
-        "netChange": -0.02,
-        "percentChange": -0.03450060376056581
+        "last": 57.36,
+        "mid": 57.54,
+        "netChange": -0.59,
+        "percentChange": -1.018119068162209
       },
       "couponSchedule": [
         {
@@ -9936,10 +9936,10 @@
       "indexLinked": false,
       "redemptionDate": "2052-07-22",
       "price": {
-        "last": 72.03,
-        "mid": 72.1,
-        "netChange": -0.58,
-        "percentChange": -0.7987880457237295
+        "last": 71.89,
+        "mid": 72.065,
+        "netChange": -0.14,
+        "percentChange": -0.1943634596695821
       },
       "couponSchedule": [
         {
@@ -10212,10 +10212,10 @@
       "indexLinked": false,
       "redemptionDate": "2053-07-31",
       "price": {
-        "last": 40.885,
-        "mid": 40.875,
-        "netChange": -0.405,
-        "percentChange": -0.9808670380237346
+        "last": 40.785,
+        "mid": 40.865,
+        "netChange": -0.1,
+        "percentChange": -0.2445884798825975
       },
       "couponSchedule": [
         {
@@ -10498,10 +10498,10 @@
       "indexLinked": false,
       "redemptionDate": "2053-10-22",
       "price": {
-        "last": 71.1,
-        "mid": 71.195,
-        "netChange": -0.59,
-        "percentChange": -0.8229878644162366
+        "last": 70.96,
+        "mid": 71.175,
+        "netChange": -0.14,
+        "percentChange": -0.1969057665260197
       },
       "couponSchedule": [
         {
@@ -10789,10 +10789,10 @@
       "indexLinked": false,
       "redemptionDate": "2054-07-31",
       "price": {
-        "last": 79.28,
-        "mid": 79.33,
-        "netChange": -0.63,
-        "percentChange": -0.788386935302215
+        "last": 79.12,
+        "mid": 79.295,
+        "netChange": -0.16,
+        "percentChange": -0.2018163471241171
       },
       "couponSchedule": [
         {
@@ -11085,10 +11085,10 @@
       "indexLinked": false,
       "redemptionDate": "2054-10-22",
       "price": {
-        "last": 41.82,
-        "mid": 41.81,
-        "netChange": -0.41,
-        "percentChange": -0.970873786407767
+        "last": 41.705,
+        "mid": 41.78,
+        "netChange": -0.115,
+        "percentChange": -0.274988043998087
       },
       "couponSchedule": [
         {
@@ -11386,10 +11386,10 @@
       "indexLinked": true,
       "redemptionDate": "2054-11-22",
       "price": {
-        "last": 75.625,
-        "mid": 75.525,
-        "netChange": -0.015,
-        "percentChange": -0.01983077736647277
+        "last": 74.875,
+        "mid": 75.155,
+        "netChange": -0.75,
+        "percentChange": -0.9917355371900826
       },
       "couponSchedule": [
         {
@@ -11687,10 +11687,10 @@
       "indexLinked": true,
       "redemptionDate": "2055-11-22",
       "price": {
-        "last": 75.32,
-        "mid": 75.255,
-        "netChange": -0.04,
-        "percentChange": -0.05307855626326964
+        "last": 74.575,
+        "mid": 74.865,
+        "netChange": -0.745,
+        "percentChange": -0.9891131173659055
       },
       "couponSchedule": [
         {
@@ -11998,10 +11998,10 @@
       "indexLinked": false,
       "redemptionDate": "2055-12-07",
       "price": {
-        "last": 77.49,
-        "mid": 77.59,
-        "netChange": -0.64,
-        "percentChange": -0.8191475745552285
+        "last": 77.34,
+        "mid": 77.555,
+        "netChange": -0.15,
+        "percentChange": -0.1935733643050716
       },
       "couponSchedule": [
         {
@@ -12309,10 +12309,10 @@
       "indexLinked": false,
       "redemptionDate": "2056-01-31",
       "price": {
-        "last": 93.05,
-        "mid": 93.03,
-        "netChange": -0.685,
-        "percentChange": -0.7307835920413933
+        "last": 92.835,
+        "mid": 93,
+        "netChange": -0.215,
+        "percentChange": -0.231058570660935
       },
       "couponSchedule": [
         {
@@ -12620,10 +12620,10 @@
       "indexLinked": true,
       "redemptionDate": "2056-11-22",
       "price": {
-        "last": 51.45,
-        "mid": 51.47,
-        "netChange": -0.085,
-        "percentChange": -0.1649364509556612
+        "last": 50.9,
+        "mid": 51.12,
+        "netChange": -0.55,
+        "percentChange": -1.068999028182702
       },
       "couponSchedule": [
         {
@@ -12941,10 +12941,10 @@
       "indexLinked": false,
       "redemptionDate": "2057-07-22",
       "price": {
-        "last": 41.72,
-        "mid": 41.73,
-        "netChange": -0.44,
-        "percentChange": -1.043643263757116
+        "last": 41.62,
+        "mid": 41.71,
+        "netChange": -0.1,
+        "percentChange": -0.2396931927133269
       },
       "couponSchedule": [
         {
@@ -13267,10 +13267,10 @@
       "indexLinked": true,
       "redemptionDate": "2058-03-22",
       "price": {
-        "last": 50.74,
-        "mid": 50.73,
-        "netChange": -0.08,
-        "percentChange": -0.1574183392365211
+        "last": 50.185,
+        "mid": 50.36,
+        "netChange": -0.555,
+        "percentChange": -1.093811588490343
       },
       "couponSchedule": [
         {
@@ -13598,10 +13598,10 @@
       "indexLinked": false,
       "redemptionDate": "2060-01-22",
       "price": {
-        "last": 73.3,
-        "mid": 73.31,
-        "netChange": -0.67,
-        "percentChange": -0.9057726105177775
+        "last": 73.18,
+        "mid": 73.3,
+        "netChange": -0.12,
+        "percentChange": -0.1637107776261937
       },
       "couponSchedule": [
         {
@@ -13949,10 +13949,10 @@
       "indexLinked": false,
       "redemptionDate": "2061-10-22",
       "price": {
-        "last": 22.2,
-        "mid": 22.22,
-        "netChange": -0.32,
-        "percentChange": -1.420959147424512
+        "last": 22.145,
+        "mid": 22.25,
+        "netChange": -0.055,
+        "percentChange": -0.2477477477477477
       },
       "couponSchedule": [
         {
@@ -14320,10 +14320,10 @@
       "indexLinked": true,
       "redemptionDate": "2062-03-22",
       "price": {
-        "last": 54.1,
-        "mid": 54.065,
-        "netChange": -0.025,
-        "percentChange": -0.04618937644341801
+        "last": 53.46,
+        "mid": 53.665,
+        "netChange": -0.64,
+        "percentChange": -1.182994454713494
       },
       "couponSchedule": [
         {
@@ -14691,10 +14691,10 @@
       "indexLinked": false,
       "redemptionDate": "2063-10-22",
       "price": {
-        "last": 72.64,
-        "mid": 72.71,
-        "netChange": -0.71,
-        "percentChange": -0.9679618268575324
+        "last": 72.51,
+        "mid": 72.705,
+        "netChange": -0.13,
+        "percentChange": -0.1789647577092511
       },
       "couponSchedule": [
         {
@@ -15082,10 +15082,10 @@
       "indexLinked": false,
       "redemptionDate": "2065-07-22",
       "price": {
-        "last": 50.07,
-        "mid": 50.11,
-        "netChange": -0.66,
-        "percentChange": -1.3010053222945
+        "last": 49.89,
+        "mid": 50.095,
+        "netChange": -0.18,
+        "percentChange": -0.359496704613541
       },
       "couponSchedule": [
         {
@@ -15488,10 +15488,10 @@
       "indexLinked": true,
       "redemptionDate": "2065-11-22",
       "price": {
-        "last": 46.27,
-        "mid": 46.325,
-        "netChange": -0.01,
-        "percentChange": -0.0216076058772688
+        "last": 45.615,
+        "mid": 45.915,
+        "netChange": -0.655,
+        "percentChange": -1.415604063107845
       },
       "couponSchedule": [
         {
@@ -15899,10 +15899,10 @@
       "indexLinked": true,
       "redemptionDate": "2068-03-22",
       "price": {
-        "last": 45.24,
-        "mid": 45.24,
-        "netChange": -0.05,
-        "percentChange": -0.1103996467211305
+        "last": 44.595,
+        "mid": 44.81,
+        "netChange": -0.645,
+        "percentChange": -1.425729442970822
       },
       "couponSchedule": [
         {
@@ -16330,10 +16330,10 @@
       "indexLinked": false,
       "redemptionDate": "2068-07-22",
       "price": {
-        "last": 65.11,
-        "mid": 65.125,
-        "netChange": -0.76,
-        "percentChange": -1.153787763777137
+        "last": 64.99,
+        "mid": 65.115,
+        "netChange": -0.12,
+        "percentChange": -0.1843034864076179
       },
       "couponSchedule": [
         {
@@ -16766,10 +16766,10 @@
       "indexLinked": false,
       "redemptionDate": "2071-10-22",
       "price": {
-        "last": 35.67,
-        "mid": 35.77,
-        "netChange": -0.43,
-        "percentChange": -1.191135734072022
+        "last": 35.7,
+        "mid": 35.89,
+        "netChange": 0.03,
+        "percentChange": 0.08410428931875526
       },
       "couponSchedule": [
         {
@@ -17237,10 +17237,10 @@
       "indexLinked": true,
       "redemptionDate": "2073-03-22",
       "price": {
-        "last": 47.41,
-        "mid": 47.38,
-        "netChange": -0.06,
-        "percentChange": -0.1263956182852328
+        "last": 46.645,
+        "mid": 46.83,
+        "netChange": -0.765,
+        "percentChange": -1.613583632145117
       },
       "couponSchedule": [
         {
@@ -17718,10 +17718,10 @@
       "indexLinked": false,
       "redemptionDate": "2073-10-22",
       "price": {
-        "last": 27.87,
-        "mid": 27.86,
-        "netChange": -0.37,
-        "percentChange": -1.310198300283286
+        "last": 27.91,
+        "mid": 28,
+        "netChange": 0.04,
+        "percentChange": 0.1435235019734482
       },
       "couponSchedule": [
         {
