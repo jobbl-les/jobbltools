@@ -24,6 +24,7 @@
     --axis: #c3c2b7;
     --series-1: #2a78d6;
     --series-2: #16a34a;
+    --series-3: #d97706;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -43,6 +44,7 @@
       --axis: #383835;
       --series-1: #3987e5;
       --series-2: #4ade80;
+      --series-3: #fbbf24;
     }
   }
   * { box-sizing: border-box; }
@@ -211,6 +213,13 @@
         <input id="horizonEndDate" type="date">
       </div>
     </div>
+    <div class="field-row">
+      <div>
+        <label for="inflationRate">Assumed inflation (% per year)</label>
+        <input id="inflationRate" type="number" min="0" max="20" step="0.1" value="2.5">
+      </div>
+    </div>
+    <div class="field-note">Used only to show each month's income in today's money (deflated to the settlement date) in the monthly chart and table — it doesn't affect gilt selection. Constant annual rate, compounded.</div>
   </div>
 
   <div class="card">
@@ -353,12 +362,22 @@
       </table>
     </div>
 
-    <h2>Total by calendar month</h2>
-    <p class="field-note">Every coupon and redemption in the schedule above, summed by calendar month across the whole horizon — the same split (income vs. capital) as the cash-flow schedule, collapsed to show which months carry the ladder's income.</p>
-    <div class="card table-scroll">
+    <h2>Monthly cash flow</h2>
+    <p class="field-note">Every calendar month from settlement to the end of the ladder, with coupons and capital returned summed per month (months with no payment show as zero). The line shows each month's total deflated to today's money at the assumed inflation rate — roughly what that income will actually be able to buy.</p>
+    <div class="checkbox-row">
+      <input type="checkbox" id="showCapital" checked>
+      <label for="showCapital">Include capital returned (redemptions) in the chart — untick to see coupon income only</label>
+    </div>
+    <div class="chart-legend">
+      <span class="key"><span class="dot" style="background:var(--series-2);"></span> Coupon income</span>
+      <span class="key" id="capitalKey"><span class="dot" style="background:var(--series-1);"></span> Capital returned</span>
+      <span class="key"><span class="dot" style="background:var(--series-3);"></span> <span id="realKeyLabel">Total in today's money</span></span>
+    </div>
+    <div class="chart-wrap"><svg class="chart" id="monthlyChart" viewBox="0 0 820 320" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="card table-scroll" style="max-height: 420px; overflow-y: auto;">
       <table>
         <thead>
-          <tr><th>Month</th><th class="amount">Coupon income</th><th class="amount">Capital returned</th><th class="amount">Total</th></tr>
+          <tr><th>Month</th><th class="amount">Coupon income</th><th class="amount">Capital returned</th><th class="amount">Total</th><th class="amount">Total in today's money</th></tr>
         </thead>
         <tbody id="monthlyRows"></tbody>
       </table>
@@ -379,7 +398,7 @@
   <footer class="data-source" id="dataSource"></footer>
 </main>
 
-<script src="ladder-calc.js?v=1"></script>
+<script src="ladder-calc.js?v=2"></script>
 <script>
   const GBP = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 2 });
   const GBP0 = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 });
@@ -413,6 +432,8 @@
   const horizonDateField = document.getElementById("horizonDateField");
   const horizonYears = document.getElementById("horizonYears");
   const horizonEndDate = document.getElementById("horizonEndDate");
+  const showCapitalInput = document.getElementById("showCapital");
+  const inflationInput = document.getElementById("inflationRate");
   const minRungsInput = document.getElementById("minRungs");
   const maxRungsInput = document.getElementById("maxRungs");
   const objectiveSlider = document.getElementById("objectiveSlider");
@@ -466,7 +487,7 @@
     render();
   });
 
-  [amountInput, settlementInput, horizonYears, horizonEndDate, minRungsInput, maxRungsInput,
+  [amountInput, settlementInput, inflationInput, showCapitalInput, horizonYears, horizonEndDate, minRungsInput, maxRungsInput,
    rungSizingSelect, ladderTypeSelect, reinvestCouponsInput, roundingUnitSelect,
    minNominalInput, maxNominalInput, durationCapYearsInput, durationCapPercentInput, excludeIsinsInput
   ].forEach((elm) => elm.addEventListener("input", render));
@@ -567,7 +588,9 @@
     renderLadderChart(ladder.rungs, params);
     renderIncomeChart(schedule.events, params);
     renderSchedule(schedule.events);
-    renderMonthlyTable(schedule.events);
+    const monthly = GiltLadder.monthlyFlows(schedule.events, params.settlementDate, params.horizonEnd, Number(inflationInput.value || 0) / 100);
+    renderMonthlyChart(monthly, showCapitalInput.checked);
+    renderMonthlyTable(monthly);
 
     results.hidden = false;
   }
@@ -644,37 +667,77 @@
 
   const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-  function renderMonthlyTable(events) {
-    const totals = MONTH_NAMES.map(() => ({ coupon: 0, capital: 0 }));
-    events.forEach((e) => {
-      const m = new Date(e.date + "T00:00:00Z").getUTCMonth();
-      if (e.type === "coupon") totals[m].coupon += e.amount;
-      if (e.type === "redemption" && !e.reinvested) totals[m].capital += e.amount;
-    });
-
+  function renderMonthlyTable(months) {
     const rows = document.getElementById("monthlyRows");
     rows.innerHTML = "";
-    let totalCoupon = 0, totalCapital = 0;
-    totals.forEach((t, i) => {
-      totalCoupon += t.coupon;
-      totalCapital += t.capital;
+    const cell = (v) => "<td class=\"amount\">" + (v > 0 ? fmtMoney0(v) : "—") + "</td>";
+    const sum = { coupon: 0, capital: 0, total: 0, realTotal: 0 };
+    months.forEach((m) => {
+      Object.keys(sum).forEach((k) => { sum[k] += m[k]; });
       const tr = document.createElement("tr");
-      tr.innerHTML =
-        "<td>" + MONTH_NAMES[i] + "</td>" +
-        "<td class=\"amount\">" + (t.coupon > 0 ? fmtMoney0(t.coupon) : "—") + "</td>" +
-        "<td class=\"amount\">" + (t.capital > 0 ? fmtMoney0(t.capital) : "—") + "</td>" +
-        "<td class=\"amount\">" + fmtMoney0(t.coupon + t.capital) + "</td>";
+      tr.innerHTML = "<td>" + MONTH_NAMES[m.month].slice(0, 3) + " " + m.year + "</td>" +
+        cell(m.coupon) + cell(m.capital) + cell(m.total) + cell(m.realTotal);
       rows.appendChild(tr);
     });
-
     const totalRow = document.createElement("tr");
     totalRow.style.fontWeight = "600";
-    totalRow.innerHTML =
-      "<td>Total</td>" +
-      "<td class=\"amount\">" + fmtMoney0(totalCoupon) + "</td>" +
-      "<td class=\"amount\">" + fmtMoney0(totalCapital) + "</td>" +
-      "<td class=\"amount\">" + fmtMoney0(totalCoupon + totalCapital) + "</td>";
+    totalRow.innerHTML = "<td>Total</td>" + cell(sum.coupon) + cell(sum.capital) + cell(sum.total) + cell(sum.realTotal);
     rows.appendChild(totalRow);
+  }
+
+  // ---- Monthly chart: stacked coupon/capital bars per month + inflation-adjusted total line ----
+  function renderMonthlyChart(months, showCapital) {
+    document.getElementById("capitalKey").hidden = !showCapital;
+    document.getElementById("realKeyLabel").textContent = showCapital ? "Total in today's money" : "Coupon income in today's money";
+    const shown = (m) => showCapital ? m.total : m.coupon;
+    const shownReal = (m) => showCapital ? m.realTotal : m.realCoupon;
+    const svg = document.getElementById("monthlyChart");
+    const W = 820, H = 320;
+    const MARGIN = { top: 20, right: 20, bottom: 40, left: 80 };
+    const plotW = W - MARGIN.left - MARGIN.right;
+    const plotH = H - MARGIN.top - MARGIN.bottom;
+    svg.innerHTML = "";
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+
+    const maxTotal = Math.max(1, ...months.map(shown));
+    const yScale = (v) => plotH - (v / maxTotal) * plotH;
+    [0, 0.25, 0.5, 0.75, 1].forEach((f) => {
+      const y = MARGIN.top + yScale(maxTotal * f);
+      svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: y, y2: y, class: "gridline" }));
+      const label = el("text", { x: MARGIN.left - 10, y: y + 4, class: "tick-label", "text-anchor": "end" });
+      label.textContent = fmtMoney0(maxTotal * f);
+      svg.appendChild(label);
+    });
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left, y1: MARGIN.top, y2: MARGIN.top + plotH, class: "axis-line" }));
+    svg.appendChild(el("line", { x1: MARGIN.left, x2: MARGIN.left + plotW, y1: MARGIN.top + plotH, y2: MARGIN.top + plotH, class: "axis-line" }));
+
+    const bandW = plotW / months.length;
+    const barW = Math.max(1, bandW * 0.8);
+    const base = MARGIN.top + plotH;
+    const points = [];
+    months.forEach((m, i) => {
+      const cx = MARGIN.left + bandW * i + bandW / 2;
+      const couponTop = MARGIN.top + yScale(m.coupon);
+      const totalTop = MARGIN.top + yScale(shown(m));
+      const tip = MONTH_NAMES[m.month].slice(0, 3) + " " + m.year + ": " + fmtMoney0(shown(m)) + " (today's money " + fmtMoney0(shownReal(m)) + ")";
+      if (m.coupon > 0) {
+        const r = el("rect", { x: cx - barW / 2, y: couponTop, width: barW, height: base - couponTop, fill: "var(--series-2)" });
+        r.appendChild(el("title", {})).textContent = tip;
+        svg.appendChild(r);
+      }
+      if (showCapital && m.capital > 0) {
+        const r = el("rect", { x: cx - barW / 2, y: totalTop, width: barW, height: couponTop - totalTop, fill: "var(--series-1)" });
+        r.appendChild(el("title", {})).textContent = tip;
+        svg.appendChild(r);
+      }
+      points.push(cx.toFixed(1) + "," + (MARGIN.top + yScale(shownReal(m))).toFixed(1));
+      if (m.month === 0 && (months.length <= 240 || m.year % 5 === 0) && (months.length <= 120 || m.year % 2 === 0)) {
+        const label = el("text", { x: cx, y: base + 18, class: "tick-label", "text-anchor": "middle" });
+        label.textContent = m.year;
+        svg.appendChild(label);
+      }
+    });
+    svg.appendChild(el("polyline", { points: points.join(" "), fill: "none", stroke: "var(--series-3)", "stroke-width": 1.5, "stroke-linejoin": "round" }));
   }
 
   // ---- Maturity ladder diagram: one horizontal bar per initial rung ----

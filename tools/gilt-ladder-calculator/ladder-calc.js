@@ -671,6 +671,49 @@
     };
   }
 
+  /**
+   * Every calendar month from the settlement month through the horizon end
+   * month (extended to cover any later event), with coupon income and
+   * non-reinvested capital summed per month. `real` values are each event's
+   * amount deflated to settlement-date money at `inflationRate` (annual,
+   * e.g. 0.025), i.e. what that cash would buy in today's terms.
+   */
+  function monthlyFlows(events, settlementDate, horizonEnd, inflationRate) {
+    var rate = inflationRate || 0;
+    var settle = new Date(settlementDate + "T00:00:00Z");
+    function key(d) { return d.getUTCFullYear() * 12 + d.getUTCMonth(); }
+    var first = key(settle);
+    var last = key(new Date(horizonEnd + "T00:00:00Z"));
+    events.forEach(function (e) {
+      last = Math.max(last, key(new Date(e.date + "T00:00:00Z")));
+    });
+    var months = [];
+    for (var k = first; k <= last; k++) {
+      months.push({
+        year: Math.floor(k / 12), month: k % 12,
+        coupon: 0, capital: 0, total: 0,
+        realCoupon: 0, realCapital: 0, realTotal: 0
+      });
+    }
+    events.forEach(function (e) {
+      var d = new Date(e.date + "T00:00:00Z");
+      var m = months[key(d) - first];
+      if (!m) return;
+      var isCoupon = e.type === "coupon";
+      var isCapital = e.type === "redemption" && !e.reinvested;
+      if (!isCoupon && !isCapital) return;
+      var years = Math.max(0, (d - settle) / 86400000 / 365.25);
+      var real = e.amount / Math.pow(1 + rate, years);
+      if (isCoupon) { m.coupon += e.amount; m.realCoupon += real; }
+      else { m.capital += e.amount; m.realCapital += real; }
+    });
+    months.forEach(function (m) {
+      m.total = m.coupon + m.capital;
+      m.realTotal = m.realCoupon + m.realCapital;
+    });
+    return months;
+  }
+
   return {
     DEFAULTS: DEFAULTS,
     accruedInterestPercent: accruedInterestPercent,
@@ -683,6 +726,7 @@
     buildLadder: buildLadder,
     buildBuyInstructions: buildBuyInstructions,
     projectSchedule: projectSchedule,
-    computeSummary: computeSummary
+    computeSummary: computeSummary,
+    monthlyFlows: monthlyFlows
   };
 });

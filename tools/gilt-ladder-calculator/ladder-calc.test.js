@@ -456,3 +456,23 @@ test("projectedValueAtHorizonEnd is only computed when reinvestCoupons is true",
   var summaryReinvest = GiltLadder.computeSummary(result.rungs, schedule, paramsReinvest);
   assert.ok(summaryReinvest.projectedValueAtHorizonEnd > 0);
 });
+
+test("monthlyFlows lists every month, sums income vs capital, and deflates by inflation", function () {
+  var events = [
+    { date: "2026-03-10", type: "coupon", amount: 100 },
+    { date: "2026-03-20", type: "coupon", amount: 50 },
+    { date: "2027-01-05", type: "redemption", amount: 1000 },
+    { date: "2027-01-05", type: "redemption", amount: 500, reinvested: true }
+  ];
+  var months = GiltLadder.monthlyFlows(events, "2026-01-05", "2027-02-01", 0.1);
+  assert.equal(months.length, 14); // Jan 2026 .. Feb 2027
+  assert.equal(months[0].year, 2026);
+  assert.equal(months[0].total, 0);
+  assert.equal(months[2].coupon, 150);
+  assert.equal(months[12].capital, 1000);
+  assert.equal(months[12].total, 1000);
+  approx(months[12].realTotal, 1000 / 1.1, 0.1, "one year at 10%");
+  approx(months[2].realCoupon, 100 / Math.pow(1.1, 64 / 365.25) + 50 / Math.pow(1.1, 74 / 365.25), 0.01);
+  var flat = GiltLadder.monthlyFlows(events, "2026-01-05", "2027-02-01", 0);
+  assert.equal(flat[12].realTotal, 1000);
+});
