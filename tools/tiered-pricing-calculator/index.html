@@ -296,6 +296,52 @@
   </div>
 
   <div class="card">
+    <h2>Goal seek a tier table</h2>
+    <p class="note" style="margin-top:0;">Give it a highest (first-tier) rate, a target monthly volume, a spend ceiling and a number of tiers. It generates tiers whose rate falls and size grows as volume climbs, so that the bill at the target volume lands just under your spend ceiling.</p>
+    <div class="range-grid">
+      <div>
+        <label for="gsTopRate">Highest rate (tier 1, per use)</label>
+        <input id="gsTopRate" type="number" min="0" step="any" value="1">
+      </div>
+      <div>
+        <label for="gsTiers">Number of tiers</label>
+        <input id="gsTiers" type="number" min="1" max="20" step="1" value="5">
+      </div>
+      <div>
+        <label for="gsVolume">Target monthly volume (uses)</label>
+        <input id="gsVolume" type="number" min="1" step="any" value="10000">
+      </div>
+      <div>
+        <label for="gsSpend">Target monthly spend (maximum)</label>
+        <input id="gsSpend" type="number" min="0" step="any" value="3000">
+      </div>
+      <div>
+        <label for="gsGrowth">Tier size growth (each tier &times; this)</label>
+        <input id="gsGrowth" type="number" min="1" step="any" value="2">
+      </div>
+      <div>
+        <label for="gsCoverage">Share of target volume before the last tier (%)</label>
+        <input id="gsCoverage" type="number" min="1" max="99" step="1" value="75">
+      </div>
+    </div>
+    <div class="err-box" id="gsMsg" style="display:none;"></div>
+    <div class="table-wrap show" id="gsResultWrap" style="display:none;">
+      <table class="data-table">
+        <thead>
+          <tr><th>Tier</th><th>From</th><th>To</th><th>Uses in tier</th><th>Rate</th><th>Spend at target</th></tr>
+        </thead>
+        <tbody id="gsBody"></tbody>
+      </table>
+    </div>
+    <p class="note" id="gsSummary"></p>
+    <div class="csv-row">
+      <button class="btn primary" id="gsApplyBtn" type="button" disabled>Use as this table's tiers</button>
+      <button class="btn" id="gsSaveNewBtn" type="button" disabled>Save as new table</button>
+    </div>
+    <p class="note">Rates fall geometrically from the highest rate; the solver finds the steepest-needed decay so the spend at the target volume is as close as possible to (never over) the ceiling. The last tier is unlimited. Replacing this table's tiers can't be undone.</p>
+  </div>
+
+  <div class="card">
     <h2>Import / export</h2>
     <div class="csv-row">
       <button class="btn" id="exportCsvBtn" type="button">Export CSV</button>
@@ -1149,11 +1195,177 @@
   });
   ro.observe(chartWrap);
 
+  // ---------- Goal seek ----------
+
+  // Builds a tier table meeting a spend ceiling at a target volume. Sizes are
+  // geometric (x growth per tier) and span `coverage` of the target volume
+  // across all but the last (unlimited) tier; rates are topRate * r^i. Only r
+  // is searched for: cost at the target volume falls monotonically as r
+  // drops, so bisection finds the largest r whose rounded table still costs
+  // <= spend. Costs are evaluated with computeForVolume on the rounded
+  // tiers, so the figure reported is exactly what the table will charge.
+  function goalSeekTiers(opts) {
+    const n = Math.max(1, Math.floor(opts.tierCount));
+    const V = opts.volume;
+    const growth = Math.max(1, opts.growth);
+    const topRate = opts.topRate;
+
+    const sizes = [];
+    if (n > 1) {
+      const total = Math.max(n - 1, Math.round(V * opts.coverage));
+      let weightSum = 0;
+      for (let i = 0; i < n - 1; i++) weightSum += Math.pow(growth, i);
+      for (let i = 0; i < n - 1; i++) {
+        const sz = Math.max(1, Math.round(total * Math.pow(growth, i) / weightSum));
+        sizes.push(sz);
+      }
+    }
+
+    function build(r) {
+      return sizes.map((sz, i) => ({ uses: sz, rate: Math.round(topRate * Math.pow(r, i) * 10000) / 10000 }))
+        .concat([{ uses: null, rate: Math.round(topRate * Math.pow(r, n - 1) * 10000) / 10000 }]);
+    }
+    function costOf(tiers) { return computeForVolume(V, tiers, 0).cost; }
+
+    const flat = build(1);
+    const flatCost = costOf(flat);
+    if (flatCost <= opts.spend) {
+      return { status: "flat", tiers: flat, cost: flatCost, flatCost, ratio: 1 };
+    }
+    const floor = build(0);
+    const floorCost = costOf(floor);
+    if (n === 1 || floorCost > opts.spend) {
+      return { status: "infeasible", tiers: floor, cost: floorCost, flatCost, ratio: 0 };
+    }
+    let lo = 0, hi = 1;
+    for (let k = 0; k < 60; k++) {
+      const mid = (lo + hi) / 2;
+      if (costOf(build(mid)) <= opts.spend) lo = mid; else hi = mid;
+    }
+    const tiers = build(lo);
+    return { status: "ok", tiers, cost: costOf(tiers), flatCost, ratio: lo };
+  }
+
+  const gsEls = {
+    topRate: document.getElementById("gsTopRate"),
+    tiers: document.getElementById("gsTiers"),
+    volume: document.getElementById("gsVolume"),
+    spend: document.getElementById("gsSpend"),
+    growth: document.getElementById("gsGrowth"),
+    coverage: document.getElementById("gsCoverage"),
+    msg: document.getElementById("gsMsg"),
+    wrap: document.getElementById("gsResultWrap"),
+    body: document.getElementById("gsBody"),
+    summary: document.getElementById("gsSummary"),
+    apply: document.getElementById("gsApplyBtn"),
+    saveNew: document.getElementById("gsSaveNewBtn")
+  };
+  let gsResult = null;
+
+  function runGoalSeek() {
+    const topRate = parseFloat(gsEls.topRate.value);
+    const tierCount = parseInt(gsEls.tiers.value, 10);
+    const volume = parseFloat(gsEls.volume.value);
+    const spend = parseFloat(gsEls.spend.value);
+    const growth = parseFloat(gsEls.growth.value);
+    const coverage = parseFloat(gsEls.coverage.value) / 100;
+
+    gsResult = null;
+    gsEls.apply.disabled = true;
+    gsEls.saveNew.disabled = true;
+    gsEls.wrap.style.display = "none";
+    gsEls.summary.textContent = "";
+    gsEls.msg.style.display = "none";
+
+    function fail(text) {
+      gsEls.msg.textContent = text;
+      gsEls.msg.style.display = "block";
+    }
+
+    if (!(topRate > 0) || !(volume > 0) || !(spend >= 0) || !(tierCount >= 1 && tierCount <= 20) ||
+        !(growth >= 1) || !(coverage > 0 && coverage < 1)) {
+      fail("Enter a positive highest rate and target volume, a spend of 0 or more, 1–20 tiers, a size growth of at least 1, and a share between 1 and 99%.");
+      return;
+    }
+
+    const res = goalSeekTiers({ topRate, tierCount, volume, spend, growth, coverage });
+
+    if (res.status === "infeasible") {
+      fail("Can't reach that spend: even with every tier after the first set to zero, the first tier alone costs " +
+        fmtCost(res.cost) + " at the target volume. Raise the spend ceiling, lower the highest rate, or lower the share of volume before the last tier.");
+      return;
+    }
+
+    gsResult = res;
+    let from = 0;
+    let html = "";
+    res.tiers.forEach((t, i) => {
+      const to = t.uses == null ? null : from + t.uses;
+      const inTier = t.uses == null ? Math.max(0, volume - from) : Math.max(0, Math.min(volume - from, t.uses));
+      html += "<tr><td>" + (i + 1) + "</td><td>" + fmtUses(from) + "</td><td>" +
+        (to == null ? "unlimited" : fmtUses(to)) + "</td><td>" +
+        (t.uses == null ? "rest" : fmtUses(t.uses)) + "</td><td>" + fmtRate(t.rate) + "</td><td>" +
+        fmtCost(round2(inTier * t.rate)) + "</td></tr>";
+      if (to != null) from = to;
+    });
+    gsEls.body.innerHTML = html;
+    gsEls.wrap.style.display = "block";
+
+    const eff = round5(res.cost / volume);
+    let summary = "At " + fmtUses(volume) + " uses: total " + fmtCost(res.cost) + " (ceiling " + fmtCost(spend) +
+      ", headroom " + fmtCost(round2(spend - res.cost)) + "), effective " + fmtRate(eff) + " per use.";
+    if (res.status === "flat") {
+      summary += " No discount is needed — a flat " + fmtRate(topRate) + " already stays within the ceiling.";
+    } else if (res.tiers.some(t => t.rate === 0)) {
+      summary += " Note: the spend ceiling is tight enough that the later tier(s) come out free (rate 0).";
+    }
+    gsEls.summary.textContent = summary;
+    gsEls.apply.disabled = false;
+    gsEls.saveNew.disabled = false;
+  }
+
+  [gsEls.topRate, gsEls.tiers, gsEls.volume, gsEls.spend, gsEls.growth, gsEls.coverage]
+    .forEach(el => el.addEventListener("input", runGoalSeek));
+
+  function gsTiersCopy() {
+    return gsResult.tiers.map(t => ({ uses: t.uses, rate: t.rate }));
+  }
+  // Chart range that comfortably shows the target volume.
+  function gsMaxVolume() {
+    return Math.max(10, Math.ceil(parseFloat(gsEls.volume.value) * 1.5 / 10) * 10);
+  }
+
+  gsEls.apply.addEventListener("click", () => {
+    if (!gsResult) return;
+    const t = activeTable();
+    t.tiers = gsTiersCopy();
+    t.minVolume = 0;
+    t.maxVolume = gsMaxVolume();
+    saveStore();
+    loadActiveIntoEditor();
+    render();
+  });
+
+  gsEls.saveNew.addEventListener("click", () => {
+    if (!gsResult) return;
+    const id = makeId();
+    store.tables[id] = {
+      name: "Goal seek: " + fmtUses(parseFloat(gsEls.volume.value)) + " @ " + fmtCost(parseFloat(gsEls.spend.value)),
+      tiers: gsTiersCopy(), minInvoice: 0, minVolume: 0, maxVolume: gsMaxVolume()
+    };
+    store.activeId = id;
+    saveStore();
+    renderTableSelect();
+    loadActiveIntoEditor();
+    render();
+  });
+
   // ---------- Init ----------
 
   renderTableSelect();
   loadActiveIntoEditor();
   render();
+  runGoalSeek();
 })();
 </script>
 </body>
