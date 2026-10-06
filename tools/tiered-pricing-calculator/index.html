@@ -337,6 +337,7 @@
     <div class="csv-row">
       <button class="btn primary" id="gsApplyBtn" type="button" disabled>Use as this table's tiers</button>
       <button class="btn" id="gsSaveNewBtn" type="button" disabled>Save as new table</button>
+      <button class="btn" id="gsExportBtn" type="button" disabled>Export CSV</button>
     </div>
     <p class="note">Rates fall geometrically from the highest rate; the solver finds the steepest-needed decay so the spend at the target volume is as close as possible to (never over) the ceiling. The last tier is unlimited. Replacing this table's tiers can't be undone.</p>
   </div>
@@ -761,18 +762,20 @@
     return tiers;
   }
 
-  exportCsvBtn.addEventListener("click", () => {
-    const csv = tiersToCsv(activeTable().tiers);
+  function downloadCsv(csv, name) {
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    const safeName = (activeTable().name || "pricing").replace(/[^a-z0-9\-_]+/gi, "_");
-    a.download = safeName + ".csv";
+    a.download = (name || "pricing").replace(/[^a-z0-9\-_]+/gi, "_") + ".csv";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+
+  exportCsvBtn.addEventListener("click", () => {
+    downloadCsv(tiersToCsv(activeTable().tiers), activeTable().name);
   });
 
   importCsvInput.addEventListener("change", () => {
@@ -1259,7 +1262,8 @@
     body: document.getElementById("gsBody"),
     summary: document.getElementById("gsSummary"),
     apply: document.getElementById("gsApplyBtn"),
-    saveNew: document.getElementById("gsSaveNewBtn")
+    saveNew: document.getElementById("gsSaveNewBtn"),
+    exportBtn: document.getElementById("gsExportBtn")
   };
   let gsResult = null;
 
@@ -1291,6 +1295,7 @@
     gsResult = null;
     gsEls.apply.disabled = true;
     gsEls.saveNew.disabled = true;
+    gsEls.exportBtn.disabled = true;
     gsEls.wrap.style.display = "none";
     gsEls.summary.textContent = "";
     gsEls.msg.style.display = "none";
@@ -1340,6 +1345,7 @@
     gsEls.summary.textContent = summary;
     gsEls.apply.disabled = false;
     gsEls.saveNew.disabled = false;
+    gsEls.exportBtn.disabled = false;
   }
 
   [gsEls.topRate, gsEls.tiers, gsEls.volume, gsEls.spend, gsEls.growth, gsEls.coverage]
@@ -1362,6 +1368,12 @@
     saveStore();
     loadActiveIntoEditor();
     render();
+  });
+
+  // Same uses,rate format as the main export, so it re-imports directly.
+  gsEls.exportBtn.addEventListener("click", () => {
+    if (!gsResult) return;
+    downloadCsv(tiersToCsv(gsResult.tiers), "goal-seek_" + gsEls.volume.value + "_" + gsEls.spend.value);
   });
 
   gsEls.saveNew.addEventListener("click", () => {
