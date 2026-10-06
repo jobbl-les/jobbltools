@@ -539,6 +539,7 @@
     minInvoiceInput.value = t.minInvoice ? t.minInvoice : "";
     minVolInput.value = t.minVolume;
     maxVolInput.value = t.maxVolume;
+    loadGoalInputs();
     expandSliderBoundIfNeeded(Math.max(t.minVolume, t.maxVolume));
     minVolSlider.value = t.minVolume;
     maxVolSlider.value = t.maxVolume;
@@ -1262,6 +1263,23 @@
   };
   let gsResult = null;
 
+  const GS_DEFAULTS = { topRate: 1, tiers: 5, volume: 10000, spend: 3000, growth: 2, coverage: 75 };
+  const GS_KEYS = Object.keys(GS_DEFAULTS);
+
+  // Inputs are kept as the raw field strings on the active table (t.goal), so
+  // they persist per table and travel with Duplicate.
+  function loadGoalInputs() {
+    const g = activeTable().goal || {};
+    GS_KEYS.forEach(k => { gsEls[k].value = g[k] != null ? g[k] : GS_DEFAULTS[k]; });
+    runGoalSeek();
+  }
+  function saveGoalInputs() {
+    const g = {};
+    GS_KEYS.forEach(k => { g[k] = gsEls[k].value; });
+    activeTable().goal = g;
+    saveStore();
+  }
+
   function runGoalSeek() {
     const topRate = parseFloat(gsEls.topRate.value);
     const tierCount = parseInt(gsEls.tiers.value, 10);
@@ -1325,7 +1343,7 @@
   }
 
   [gsEls.topRate, gsEls.tiers, gsEls.volume, gsEls.spend, gsEls.growth, gsEls.coverage]
-    .forEach(el => el.addEventListener("input", runGoalSeek));
+    .forEach(el => el.addEventListener("input", () => { saveGoalInputs(); runGoalSeek(); }));
 
   function gsTiersCopy() {
     return gsResult.tiers.map(t => ({ uses: t.uses, rate: t.rate }));
@@ -1351,7 +1369,8 @@
     const id = makeId();
     store.tables[id] = {
       name: "Goal seek: " + fmtUses(parseFloat(gsEls.volume.value)) + " @ " + fmtCost(parseFloat(gsEls.spend.value)),
-      tiers: gsTiersCopy(), minInvoice: 0, minVolume: 0, maxVolume: gsMaxVolume()
+      tiers: gsTiersCopy(), minInvoice: 0, minVolume: 0, maxVolume: gsMaxVolume(),
+      goal: GS_KEYS.reduce((g, k) => { g[k] = gsEls[k].value; return g; }, {})
     };
     store.activeId = id;
     saveStore();
@@ -1365,7 +1384,6 @@
   renderTableSelect();
   loadActiveIntoEditor();
   render();
-  runGoalSeek();
 })();
 </script>
 </body>
